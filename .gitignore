@@ -14,8 +14,19 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
+# IntelliJ
+.idea/
+*.iml
+
+# Vscode files
+.vscode
+
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
 # Go workspace file
 go.work
+
+# Used during parts of the build process. Files _should_ get cleaned up automatically.
+# This is also a good location for any temporary manfiests used during development
+tmp
