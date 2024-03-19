@@ -15,10 +15,16 @@
  *  along with PETA. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package main
+package cmd
 
-import "peta.io/peta/cmd"
+import "github.com/spf13/cobra"
 
-func main() {
-	cmd.Execute()
+func NewInitCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "init",
+		Short: "Initialize the OS env",
+		Long:  "Initialize the OS env for installation",
+	}
+
+	return cmd
 }

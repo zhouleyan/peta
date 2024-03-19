@@ -15,10 +15,35 @@
  *  along with PETA. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package main
+package cmd
 
-import "peta.io/peta/cmd"
+import (
+	"fmt"
+	"github.com/spf13/cobra"
+	"os"
+)
 
-func main() {
-	cmd.Execute()
+// NewPetaCommand creates a new peta root command.
+func NewPetaCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "peta",
+		Short: "Run and manage PETA",
+		Long:  "Run and manage PETA...",
+	}
+	RegisterCommandRecursive(cmd)
+
+	return cmd
+}
+
+func RegisterCommandRecursive(parent *cobra.Command) {
+	initCmd := NewInitCmd()
+	parent.AddCommand(initCmd)
+}
+
+// Execute adds all child commands to the root command sets flags appropriately.
+func Execute() {
+	if err := NewPetaCommand().Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }
