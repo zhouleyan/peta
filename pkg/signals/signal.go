@@ -15,41 +15,32 @@
  *  along with PETA. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package cmd
+package signals
 
 import (
-	"fmt"
-	"github.com/spf13/cobra"
+	"context"
 	"os"
+	"os/signal"
 )
 
-// NewPetaCommand creates a new peta root command.
-func NewPetaCommand() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "peta",
-		Short: "Run and manage PETA",
-		Long:  "Run and manage PETA...",
-	}
-	RegisterCommandRecursive(cmd)
+var onlyOneSignalHandler = make(chan struct{})
 
-	return cmd
-}
+// SetupSignalHandler registers for SIGTERM and SIGINT. A context is returned
+// which is canceled on one of these signals. If a second signal is caught, the program
+// is terminated with exit code 1.
+func SetupSignalHandler() context.Context {
+	close(onlyOneSignalHandler) // panics when called twice
 
-func RegisterCommandRecursive(parent *cobra.Command) {
-	initCmd := NewInitCmd()
+	ctx, cancel := context.WithCancel(context.Background())
 
-	serveCmd := NewServeCmd()
-	serveCmd.AddCommand(NewServeAdminCmd())
-	parent.AddCommand(
-		initCmd,
-		serveCmd,
-	)
-}
+	c := make(chan os.Signal, 2)
+	signal.Notify(c, shutdownSignals...)
+	go func() {
+		<-c
+		cancel()
+		<-c
+		os.Exit(1) // second signal. Exit directly.
+	}()
 
-// Execute adds all child commands to the root command sets flags appropriately.
-func Execute() {
-	if err := NewPetaCommand().Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+	return ctx
 }

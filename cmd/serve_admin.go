@@ -18,38 +18,18 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/spf13/cobra"
-	"os"
+	"peta.io/peta/pkg/server"
 )
 
-// NewPetaCommand creates a new peta root command.
-func NewPetaCommand() *cobra.Command {
+func NewServeAdminCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "peta",
-		Short: "Run and manage PETA",
-		Long:  "Run and manage PETA...",
+		Use:   "admin",
+		Short: "Serves PETA Admin APIs",
+		Long: `This command opens one port and listens to API requests. The exposed API handles administrative
+requests like managing users, roles, groups and others.`,
+		RunE:         server.RunServeAdmin(),
+		SilenceUsage: true,
 	}
-	RegisterCommandRecursive(cmd)
-
 	return cmd
-}
-
-func RegisterCommandRecursive(parent *cobra.Command) {
-	initCmd := NewInitCmd()
-
-	serveCmd := NewServeCmd()
-	serveCmd.AddCommand(NewServeAdminCmd())
-	parent.AddCommand(
-		initCmd,
-		serveCmd,
-	)
-}
-
-// Execute adds all child commands to the root command sets flags appropriately.
-func Execute() {
-	if err := NewPetaCommand().Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
 }

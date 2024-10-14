@@ -15,41 +15,31 @@
  *  along with PETA. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package cmd
+package server
 
 import (
-	"fmt"
+	"context"
 	"github.com/spf13/cobra"
-	"os"
+	"peta.io/peta/pkg/signals"
 )
 
-// NewPetaCommand creates a new peta root command.
-func NewPetaCommand() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "peta",
-		Short: "Run and manage PETA",
-		Long:  "Run and manage PETA...",
+func RunServeAdmin() func(cmd *cobra.Command, args []string) error {
+	return func(cmd *cobra.Command, args []string) error {
+		return Run(signals.SetupSignalHandler())
 	}
-	RegisterCommandRecursive(cmd)
-
-	return cmd
 }
 
-func RegisterCommandRecursive(parent *cobra.Command) {
-	initCmd := NewInitCmd()
+func Run(ctx context.Context) error {
+	//iCtx, cancelFunc := context.WithCancel(context.TODO())
 
-	serveCmd := NewServeCmd()
-	serveCmd.AddCommand(NewServeAdminCmd())
-	parent.AddCommand(
-		initCmd,
-		serveCmd,
-	)
-}
-
-// Execute adds all child commands to the root command sets flags appropriately.
-func Execute() {
-	if err := NewPetaCommand().Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+	// The ctx(signals.SetupSignalHandler()) is to control the entire program life cycle,
+	// The iCtx(internal context) is created here to control the life cycle of the peta admin server
+	//for {
+	//	select {
+	//	case <-ctx.Done():
+	//		cancelFunc()
+	//		return nil
+	//	}
+	//}
+	return nil
 }

@@ -1,3 +1,5 @@
+//go:build !windows
+
 /*
  *  This file is part of PETA.
  *  Copyright (C) 2024 The PETA Authors.
@@ -15,41 +17,11 @@
  *  along with PETA. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package cmd
+package signals
 
 import (
-	"fmt"
-	"github.com/spf13/cobra"
 	"os"
+	"syscall"
 )
 
-// NewPetaCommand creates a new peta root command.
-func NewPetaCommand() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "peta",
-		Short: "Run and manage PETA",
-		Long:  "Run and manage PETA...",
-	}
-	RegisterCommandRecursive(cmd)
-
-	return cmd
-}
-
-func RegisterCommandRecursive(parent *cobra.Command) {
-	initCmd := NewInitCmd()
-
-	serveCmd := NewServeCmd()
-	serveCmd.AddCommand(NewServeAdminCmd())
-	parent.AddCommand(
-		initCmd,
-		serveCmd,
-	)
-}
-
-// Execute adds all child commands to the root command sets flags appropriately.
-func Execute() {
-	if err := NewPetaCommand().Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-}
+var shutdownSignals = []os.Signal{os.Interrupt, syscall.SIGTERM}
