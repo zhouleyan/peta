@@ -15,21 +15,11 @@
  *  along with PETA. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package cmd
+package config
 
-import (
-	"github.com/spf13/cobra"
-	"peta.io/peta/pkg/server"
-)
+// Config is the central configuration type
+type Config struct{}
 
-func NewServeAdminCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "admin",
-		Short: "Serves PETA Admin APIs",
-		Long: `This command opens one port and listens to API requests. The exposed API handles administrative
-requests like managing users, roles, groups and others.`,
-		RunE:         server.RunServeAdmin(),
-		SilenceUsage: true,
-	}
-	return cmd
+func NewServerAdminConfig() *Config {
+	return &Config{}
 }

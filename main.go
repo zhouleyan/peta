@@ -17,8 +17,13 @@
 
 package main
 
-import "peta.io/peta/cmd"
+import (
+	"peta.io/peta/cmd"
+	"peta.io/peta/pkg/profile"
+)
 
 func main() {
+	defer profile.Profile().Stop()
+
 	cmd.Execute()
 }

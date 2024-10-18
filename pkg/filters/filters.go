@@ -15,18 +15,12 @@
  *  along with PETA. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package cmd
+package filters
 
-import (
-	"github.com/spf13/cobra"
-)
+import "net/http"
 
-func NewServeCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "serve",
-		Short: "Parent command for starting public and administrative APIs",
-	}
-
-	cmd.PersistentFlags().StringSliceP("config", "c", []string{"a", "b", "c"}, "config")
-	return cmd
+func WithGlobalFilter(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		//TODO: WithGlobalFilter
+	})
 }
