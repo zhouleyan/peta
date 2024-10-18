@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"os"
+	"peta.io/peta/cmd/serve"
 )
 
 // NewPetaCommand creates a new peta root command.
@@ -35,15 +36,9 @@ func NewPetaCommand() *cobra.Command {
 	return cmd
 }
 
-func RegisterCommandRecursive(parent *cobra.Command) {
-	initCmd := NewInitCmd()
+func RegisterCommandRecursive(cmd *cobra.Command) {
 
-	serveCmd := NewServeCmd()
-	serveCmd.AddCommand(NewServeAdminCmd())
-	parent.AddCommand(
-		initCmd,
-		serveCmd,
-	)
+	serve.RegisterCommands(cmd)
 }
 
 // Execute adds all child commands to the root command sets flags appropriately.

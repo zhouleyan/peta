@@ -15,31 +15,21 @@
  *  along with PETA. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package server
+package serve
 
-import (
-	"context"
-	"github.com/spf13/cobra"
-	"peta.io/peta/pkg/signals"
-)
+import "github.com/spf13/cobra"
 
-func RunServeAdmin() func(cmd *cobra.Command, args []string) error {
-	return func(cmd *cobra.Command, args []string) error {
-		return Run(signals.SetupSignalHandler())
+func NewServeCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "serve",
+		Short: "Start the peta server.",
+		Long:  ``,
 	}
 }
 
-func Run(ctx context.Context) error {
-	//iCtx, cancelFunc := context.WithCancel(context.TODO())
+func RegisterCommands(parent *cobra.Command) {
+	cmd := NewServeCommand()
+	parent.AddCommand(cmd)
 
-	// The ctx(signals.SetupSignalHandler()) is to control the entire program life cycle,
-	// The iCtx(internal context) is created here to control the life cycle of the peta admin server
-	//for {
-	//	select {
-	//	case <-ctx.Done():
-	//		cancelFunc()
-	//		return nil
-	//	}
-	//}
-	return nil
+	cmd.AddCommand(NewServerAdminCommand())
 }
