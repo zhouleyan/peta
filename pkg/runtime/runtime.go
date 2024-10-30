@@ -15,47 +15,19 @@
  *  along with PETA. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package serve
+package runtime
 
-import (
-	"context"
-	"errors"
-	"github.com/spf13/cobra"
-	"net/http"
-	"peta.io/peta/pkg/config"
-	"peta.io/peta/pkg/server"
-	"peta.io/peta/pkg/signals"
+var (
+	// ReallyCrash controls the behavior of HandleCrash and defaults to
+	// true. It's exposed so components can optionally set false to
+	// restore prior behavior. This flag is mostly used for tests to validate
+	// crash conditions.
+	ReallyCrash = true
 )
 
-func NewServerAdminCommand() *cobra.Command {
-	c := config.NewServerAdminConfig()
-
-	cmd := &cobra.Command{
-		Use:   "admin",
-		Short: "Start the peta admin server.",
-		Long:  ``,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return Run(signals.SetupSignalHandler(), c)
-		},
-	}
-
-	return cmd
-}
-
-func Run(ctx context.Context, c *config.Config) error {
-
-	apiServer, err := server.NewAPIServer(ctx)
+// Must panics on non-nil errors. Useful to handling programmer level errors.
+func Must(err error) {
 	if err != nil {
-		return err
+		panic(err)
 	}
-
-	if err = apiServer.PreRun(); err != nil {
-		return err
-	}
-
-	if errors.Is(apiServer.Run(ctx), http.ErrServerClosed) {
-		return nil
-	}
-
-	return err
 }

@@ -24,8 +24,11 @@ import (
 	"github.com/emicklei/go-restful/v3"
 	"k8s.io/klog/v2"
 	"net/http"
+	"peta.io/peta/pkg/apis"
+	versionhandler "peta.io/peta/pkg/apis/version"
 	"peta.io/peta/pkg/config"
-	"peta.io/peta/pkg/filters"
+	urlruntime "peta.io/peta/pkg/runtime"
+	"peta.io/peta/pkg/version"
 	rt "runtime"
 )
 
@@ -36,10 +39,14 @@ type APIServer struct {
 	container *restful.Container
 
 	config *config.Config
+
+	VersionInfo *version.Info
 }
 
 func NewAPIServer(ctx context.Context) (*APIServer, error) {
-	apiServer := &APIServer{}
+	apiServer := &APIServer{
+		VersionInfo: version.Get(),
+	}
 
 	return apiServer, nil
 }
@@ -57,8 +64,10 @@ func (s *APIServer) PreRun() error {
 	})
 
 	// install APIs
+	s.installPETAAPIs()
 
 	for _, ws := range s.container.RegisteredWebServices() {
+		fmt.Printf("%s\n", ws.RootPath())
 		klog.V(2).Infof("%s", ws.RootPath())
 	}
 
@@ -67,7 +76,8 @@ func (s *APIServer) PreRun() error {
 		return fmt.Errorf("failed to build handler chain: %w", err)
 	}
 
-	s.Server.Handler = filters.WithGlobalFilter(combinedHandler)
+	//s.Server.Handler = filters.WithGlobalFilter(combinedHandler)
+	s.Server.Handler = combinedHandler
 
 	return nil
 }
@@ -88,24 +98,6 @@ func (s *APIServer) Run(ctx context.Context) (err error) {
 	err = s.Server.ListenAndServe()
 
 	return err
-	// inner ctx is to control the life cycle of the peta admin
-	//ctx, cancel := context.WithCancel(ctx)
-	//defer cancel()
-	//
-	//go func() {
-	//	<-ctx.Done()
-	//}()
-	//iCtx, cancelFunc := context.WithCancel(context.TODO())
-
-	// The ctx(signals.SetupSignalHandler()) is to control the entire program life cycle,
-	// The iCtx(internal context) is created here to control the life cycle of the peta admin serve
-	//for {
-	//	select {
-	//	case <-ctx.Done():
-	//		cancelFunc()
-	//		return nil
-	//	}
-	//}
 }
 
 func logStackOnRecover(panicReason interface{}, w http.ResponseWriter) {
@@ -130,4 +122,14 @@ func logStackOnRecover(panicReason interface{}, w http.ResponseWriter) {
 
 func (s *APIServer) buildHandlerChain(handler http.Handler) (http.Handler, error) {
 	return handler, nil
+}
+
+func (s *APIServer) installPETAAPIs() {
+	handlers := []apis.Handler{
+		versionhandler.NewHandler(s.VersionInfo),
+	}
+
+	for _, handler := range handlers {
+		urlruntime.Must(handler.AddToContainer(s.container))
+	}
 }
