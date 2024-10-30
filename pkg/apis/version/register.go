@@ -34,6 +34,10 @@ func NewHandler(versionInfo *version.Info) apis.Handler {
 	return &handler{versionInfo: versionInfo}
 }
 
+func NewFakeHandler() apis.Handler {
+	return &handler{}
+}
+
 type handler struct {
 	versionInfo *version.Info
 }

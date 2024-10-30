@@ -67,7 +67,6 @@ func (s *APIServer) PreRun() error {
 	s.installPETAAPIs()
 
 	for _, ws := range s.container.RegisteredWebServices() {
-		fmt.Printf("%s\n", ws.RootPath())
 		klog.V(2).Infof("%s", ws.RootPath())
 	}
 

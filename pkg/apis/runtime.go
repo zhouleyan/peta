@@ -40,8 +40,6 @@ type GroupVersion struct {
 	Version string
 }
 
-type ContainerBuilder []func(c *restful.Container) error
-
 const MimeMergePatchJson = "application/merge-patch+json"
 const MimeJsonPatchJson = "application/json-patch+json"
 const MimeMultipartFormData = "multipart/form-data"
@@ -52,27 +50,11 @@ func init() {
 }
 
 func NewWebService(gv GroupVersion) *restful.WebService {
-	//webservice := new(restful.WebService)
-	webservice := restful.WebService{}
+	webservice := new(restful.WebService)
 	// the GroupVersion might be empty, we need to remove the final /
 	webservice.Path(strings.TrimRight(APIRootPath+"/"+gv.String(), "/")).
 		Produces(restful.MIME_JSON)
-	return &webservice
-}
-
-func (cb *ContainerBuilder) AddToContainer(c *restful.Container) error {
-	for _, f := range *cb {
-		if err := f(c); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (cb *ContainerBuilder) Register(functions ...func(c *restful.Container) error) {
-	for _, f := range functions {
-		*cb = append(*cb, f)
-	}
+	return webservice
 }
 
 // Empty returns true of group and version are empty

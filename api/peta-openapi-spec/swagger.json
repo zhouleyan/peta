@@ -1,0 +1,97 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "PETA OpenAPI",
+    "title": "PETA API",
+    "contact": {
+      "name": "PETA",
+      "url": "https://peta.io",
+      "email": "support@peta.io"
+    },
+    "version": "v0.0.1"
+  },
+  "paths": {
+    "/apis/version.peta.io/v1alpha1/version": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "NonResource APIs"
+        ],
+        "summary": "PETA version info",
+        "operationId": "version",
+        "responses": {
+          "200": {
+            "description": "ok",
+            "schema": {
+              "$ref": "#/definitions/version.Info"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "version.Info": {
+      "required": [
+        "gitVersion",
+        "gitMajor",
+        "gitMinor",
+        "gitCommit",
+        "gitTreeState",
+        "buildDate",
+        "goVersion",
+        "compiler",
+        "platform"
+      ],
+      "properties": {
+        "buildDate": {
+          "type": "string"
+        },
+        "compiler": {
+          "type": "string"
+        },
+        "gitCommit": {
+          "type": "string"
+        },
+        "gitMajor": {
+          "type": "string"
+        },
+        "gitMinor": {
+          "type": "string"
+        },
+        "gitTreeState": {
+          "type": "string"
+        },
+        "gitVersion": {
+          "type": "string"
+        },
+        "goVersion": {
+          "type": "string"
+        },
+        "platform": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "securityDefinitions": {
+    "BearerToken": {
+      "description": "Bearer Token Authentication",
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header"
+    }
+  },
+  "security": [
+    {
+      "BearerToken": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "NonResource APIs"
+    }
+  ]
+}
