@@ -53,6 +53,9 @@ func (h *handler) AddToContainer(container *restful.Container) error {
 	ws.Route(ws.GET(DefaultHealthzPath).
 		To(handleHealth(name, nil, h.checks...)).
 		Doc("PETA health check").
+		Param(
+			ws.QueryParameter("verbose", "Detailed information for out log").
+				DataType("string")).
 		Operation("healthcheck").
 		Metadata(restfulspec.KeyOpenAPITags, []string{apis.TagNonResourceAPI}).
 		Returns(http.StatusOK, apis.StatusOK, nil))

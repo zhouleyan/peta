@@ -38,6 +38,14 @@
         ],
         "summary": "PETA health check",
         "operationId": "healthcheck",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Detailed information for out log",
+            "name": "verbose",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "ok"
