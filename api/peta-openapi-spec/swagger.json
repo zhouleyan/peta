@@ -30,6 +30,20 @@
           }
         }
       }
+    },
+    "/healthz": {
+      "get": {
+        "tags": [
+          "NonResource APIs"
+        ],
+        "summary": "PETA health check",
+        "operationId": "healthcheck",
+        "responses": {
+          "200": {
+            "description": "ok"
+          }
+        }
+      }
     }
   },
   "definitions": {

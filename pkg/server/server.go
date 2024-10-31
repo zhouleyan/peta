@@ -25,6 +25,7 @@ import (
 	"k8s.io/klog/v2"
 	"net/http"
 	"peta.io/peta/pkg/apis"
+	healthzhandler "peta.io/peta/pkg/apis/healthz"
 	versionhandler "peta.io/peta/pkg/apis/version"
 	"peta.io/peta/pkg/config"
 	urlruntime "peta.io/peta/pkg/runtime"
@@ -126,6 +127,7 @@ func (s *APIServer) buildHandlerChain(handler http.Handler) (http.Handler, error
 func (s *APIServer) installPETAAPIs() {
 	handlers := []apis.Handler{
 		versionhandler.NewHandler(s.VersionInfo),
+		healthzhandler.NewHandler(),
 	}
 
 	for _, handler := range handlers {

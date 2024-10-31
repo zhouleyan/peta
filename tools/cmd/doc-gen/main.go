@@ -32,6 +32,7 @@ import (
 	"os"
 	"os/exec"
 	"peta.io/peta/pkg/apis"
+	"peta.io/peta/pkg/apis/healthz"
 	"peta.io/peta/pkg/apis/version"
 	urlruntime "peta.io/peta/pkg/runtime"
 )
@@ -85,6 +86,7 @@ func generateSwaggerJSON() []byte {
 
 	handlers := []apis.Handler{
 		version.NewFakeHandler(),
+		healthz.NewFakeHandler(),
 	}
 
 	for _, h := range handlers {
