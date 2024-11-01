@@ -37,7 +37,51 @@
           "NonResource APIs"
         ],
         "summary": "PETA health check",
-        "operationId": "healthcheck",
+        "operationId": "health check",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Detailed information for out log",
+            "name": "verbose",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok"
+          }
+        }
+      }
+    },
+    "/livez": {
+      "get": {
+        "tags": [
+          "NonResource APIs"
+        ],
+        "summary": "PETA liveness check",
+        "operationId": "liveness check",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Detailed information for out log",
+            "name": "verbose",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok"
+          }
+        }
+      }
+    },
+    "/readyz": {
+      "get": {
+        "tags": [
+          "NonResource APIs"
+        ],
+        "summary": "PETA readiness check",
+        "operationId": "readiness check",
         "parameters": [
           {
             "type": "string",

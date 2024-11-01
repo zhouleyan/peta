@@ -66,6 +66,7 @@ func (s *APIServer) PreRun() error {
 
 	// install APIs
 	s.installPETAAPIs()
+	s.installHealthz()
 
 	for _, ws := range s.container.RegisteredWebServices() {
 		klog.V(2).Infof("%s", ws.RootPath())
@@ -76,7 +77,7 @@ func (s *APIServer) PreRun() error {
 		return fmt.Errorf("failed to build handler chain: %w", err)
 	}
 
-	//s.Server.Handler = filters.WithGlobalFilter(combinedHandler)
+	//TODO: s.Server.Handler = filters.WithGlobalFilter(combinedHandler)
 	s.Server.Handler = combinedHandler
 
 	return nil
@@ -127,10 +128,19 @@ func (s *APIServer) buildHandlerChain(handler http.Handler) (http.Handler, error
 func (s *APIServer) installPETAAPIs() {
 	handlers := []apis.Handler{
 		versionhandler.NewHandler(s.VersionInfo),
-		healthzhandler.NewHandler(),
 	}
 
 	for _, handler := range handlers {
 		urlruntime.Must(handler.AddToContainer(s.container))
 	}
+}
+
+func (s *APIServer) installHealthz() {
+	handler := healthzhandler.NewHandler(
+		[]healthzhandler.HealthChecker{},
+		[]healthzhandler.HealthChecker{},
+		[]healthzhandler.HealthChecker{},
+	)
+
+	urlruntime.Must(handler.AddToContainer(s.container))
 }
