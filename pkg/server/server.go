@@ -29,6 +29,7 @@ import (
 	versionhandler "peta.io/peta/pkg/apis/version"
 	"peta.io/peta/pkg/config"
 	urlruntime "peta.io/peta/pkg/runtime"
+	"peta.io/peta/pkg/server/filters"
 	"peta.io/peta/pkg/version"
 	rt "runtime"
 )
@@ -96,7 +97,11 @@ func (s *APIServer) Run(ctx context.Context) (err error) {
 	}()
 
 	klog.V(0).Infof("Start listening on %s", s.Server.Addr)
-	err = s.Server.ListenAndServe()
+	if s.Server.TLSConfig != nil {
+		err = s.Server.ListenAndServeTLS("", "")
+	} else {
+		err = s.Server.ListenAndServe()
+	}
 
 	return err
 }
@@ -122,6 +127,7 @@ func logStackOnRecover(panicReason interface{}, w http.ResponseWriter) {
 }
 
 func (s *APIServer) buildHandlerChain(handler http.Handler) (http.Handler, error) {
+	handler = filters.WithRequestInfo(handler)
 	return handler, nil
 }
 

@@ -15,11 +15,6 @@
  *  along with PETA. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package apis
-
-const (
-	StatusOK          = "ok"
-	TagNonResourceAPI = "NonResource APIs"
-	WorkspaceNone     = ""
-	ClusterNone       = ""
-)
+// Package sets has generic set and specified sets. Generic set will
+// replace specified ones over time.
+package sets

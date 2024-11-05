@@ -15,11 +15,16 @@
  *  along with PETA. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package apis
+package filters
 
-const (
-	StatusOK          = "ok"
-	TagNonResourceAPI = "NonResource APIs"
-	WorkspaceNone     = ""
-	ClusterNone       = ""
-)
+import "net/http"
+
+func WithRequestInfo(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+
+		ctx := req.Context()
+
+		*req = *req.WithContext(ctx)
+		next.ServeHTTP(w, req)
+	})
+}

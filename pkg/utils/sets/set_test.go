@@ -15,11 +15,47 @@
  *  along with PETA. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package apis
+package sets
 
-const (
-	StatusOK          = "ok"
-	TagNonResourceAPI = "NonResource APIs"
-	WorkspaceNone     = ""
-	ClusterNone       = ""
+import (
+	"testing"
 )
+
+func TestSets(t *testing.T) {
+	testMap := map[string]string{
+		"foo_key": "foo_value",
+		"bar_key": "bar_value",
+	}
+
+	t.Run("set_test", func(t *testing.T) {
+
+		ks := KeySet(testMap)
+
+		ks.Insert("a")
+		ks.Insert("a")
+
+		ks = ks.Delete("foo_key")
+		for k := range ks {
+			if k == "bar_key" {
+				t.Logf("%v", ks)
+			}
+
+			if k == "foo_key" {
+				t.Errorf("%s: set delete failed", t.Name())
+			}
+		}
+	})
+
+	t.Run("set_intersection", func(t *testing.T) {
+		s1 := New[string]("foo", "bar")
+		s2 := New[string]("bar", "baz")
+		s3 := s1.Intersection(s2)
+		for k := range s3 {
+			if k == "foo" || k == "baz" {
+				t.Errorf("%s: intersection failed", t.Name())
+				return
+			}
+			t.Logf("%v", k)
+		}
+	})
+}
