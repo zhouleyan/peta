@@ -238,7 +238,7 @@ func (ri *InfoFactory) NewRequestInfo(req *http.Request) (*Info, error) {
 	}
 
 	if len(info.Name) == 0 && info.Verb == VerbDelete {
-		info.Verb = "deletecollection"
+		info.Verb = "delete_collection"
 	}
 
 	return &info, nil
