@@ -17,14 +17,23 @@
 
 package filters
 
-import "net/http"
+import (
+	"fmt"
+	"net/http"
+	"peta.io/peta/pkg/apis"
+	"peta.io/peta/pkg/server/request"
+)
 
-func WithRequestInfo(next http.Handler) http.Handler {
+func WithRequestInfo(next http.Handler, resolver request.InfoResolver) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 
 		ctx := req.Context()
+		info, err := resolver.NewRequestInfo(req)
+		if err != nil {
+			apis.InternalError(w, req, fmt.Errorf("failed to crate request info: %v", err))
+		}
 
-		*req = *req.WithContext(ctx)
+		*req = *req.WithContext(request.WithRequestInfo(ctx, info))
 		next.ServeHTTP(w, req)
 	})
 }

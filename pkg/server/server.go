@@ -30,6 +30,8 @@ import (
 	"peta.io/peta/pkg/config"
 	urlruntime "peta.io/peta/pkg/runtime"
 	"peta.io/peta/pkg/server/filters"
+	"peta.io/peta/pkg/server/request"
+	"peta.io/peta/pkg/utils/sets"
 	"peta.io/peta/pkg/version"
 	rt "runtime"
 )
@@ -127,7 +129,8 @@ func logStackOnRecover(panicReason interface{}, w http.ResponseWriter) {
 }
 
 func (s *APIServer) buildHandlerChain(handler http.Handler) (http.Handler, error) {
-	handler = filters.WithRequestInfo(handler)
+	requestInfoResolver := &request.InfoFactory{APIPrefixes: sets.New("apis")}
+	handler = filters.WithRequestInfo(handler, requestInfoResolver)
 	return handler, nil
 }
 

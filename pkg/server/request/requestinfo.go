@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"peta.io/peta/pkg/apis"
 	"peta.io/peta/pkg/utils/iputils"
+	"peta.io/peta/pkg/utils/sets"
 	"strings"
 )
 
@@ -35,6 +36,18 @@ const (
 	VerbWatch  = "watch"
 	VerbPatch  = "patch"
 )
+
+// specialVerbs contains just strings which are used in REST paths for special actions that don't fall under the normal
+// CRUDdy GET/POST/PUT/DELETE actions on REST objects.
+// master's Mux.
+var specialVerbs = sets.New("proxy", "watch")
+
+// namespaceSubResources contains subresource of namespace
+// this list allows the parser to distinguish between a namespace subresource, and a namespaced resource
+var namespaceSubResources = sets.New("status", "finalize")
+
+// specialVerbsNoSubResources contains root verbs which do not allow subresource
+var specialVerbsNoSubResources = sets.New("proxy")
 
 type InfoResolver interface {
 	NewRequestInfo(req *http.Request) (*Info, error)
@@ -98,10 +111,11 @@ type Info struct {
 }
 
 type InfoFactory struct {
+	APIPrefixes sets.Set[string]
 }
 
 // NewRequestInfo returns the information from the http request.
-func (i *InfoFactory) NewRequestInfo(req *http.Request) (*Info, error) {
+func (ri *InfoFactory) NewRequestInfo(req *http.Request) (*Info, error) {
 	info := Info{
 		Path:      req.URL.Path,
 		Verb:      req.Method,
@@ -111,12 +125,19 @@ func (i *InfoFactory) NewRequestInfo(req *http.Request) (*Info, error) {
 		UserAgent: req.UserAgent(),
 	}
 
+	// p0: "apis"
+	// p1: "version.peta.io"
+	// p2: "v1alpha1"
+	// p3: "version"
+	// ["apis", "version.peta.io", "v1alpha1", "version"]
 	currentParts := splitPath(req.URL.Path)
 	if len(currentParts) < 3 {
 		return &info, nil
 	}
 
 	// URL forms: /clusters/{cluster}/*
+	// Path: /clusters/foo/apis/version.peta.io/v1alpha1/version => /apis/version.peta.io/v1alpha1/version
+	// Cluster: foo
 	if currentParts[0] == "clusters" {
 		if len(currentParts) > 1 {
 			info.Cluster = currentParts[1]
@@ -127,11 +148,109 @@ func (i *InfoFactory) NewRequestInfo(req *http.Request) (*Info, error) {
 		}
 	}
 
+	if !ri.APIPrefixes.Has(currentParts[0]) {
+		// return a non-resource request
+		return &info, nil
+	}
+	info.APIPrefix = currentParts[0]
+	// ["version.peta.io", "v1alpha1", "version"]
+	currentParts = currentParts[1:]
+
+	if len(currentParts) < 3 {
+		return &info, nil
+	}
+
+	info.APIGroup = currentParts[0]
+	// ["v1alpha1", "version"]
+	currentParts = currentParts[1:]
+
+	info.IsResourceRequest = true
+	info.APIVersion = currentParts[0]
+	// ["version"]
+	currentParts = currentParts[1:]
+
+	if len(currentParts) > 0 && specialVerbs.Has(currentParts[0]) {
+		if len(currentParts) < 2 {
+			return &info, fmt.Errorf("unable to determine kind and namespace from url: %v", req.URL)
+		}
+
+		info.Verb = currentParts[0]
+		currentParts = currentParts[1:]
+	} else {
+		switch req.Method {
+		case "POST":
+			info.Verb = VerbCreate
+		case "GET", "HEAD":
+			info.Verb = VerbGet
+		case "PUT":
+			info.Verb = VerbUpdate
+		case "PATCH":
+			info.Verb = VerbPatch
+		case "DELETE":
+			info.Verb = VerbDelete
+		default:
+			info.Verb = ""
+		}
+	}
+
+	// URL forms: /workspaces/{workspace}/*
+	if currentParts[0] == "workspaces" {
+		if len(currentParts) > 1 {
+			info.Workspace = currentParts[1]
+		}
+		if len(currentParts) > 2 {
+			currentParts = currentParts[2:]
+		}
+	}
+
+	// URL forms: /namespaces/{namespace}/{kind}/*, where parts are adjusted to be relative to kind
+	if currentParts[0] == "namespaces" {
+		if len(currentParts) > 1 {
+			info.Namespace = currentParts[1]
+
+			// if there is another step after the namespace name, and it is not a known namespace subresource
+			// move currentParts to include it as a resource in its own right
+			if len(currentParts) > 2 && !namespaceSubResources.Has(currentParts[2]) {
+				currentParts = currentParts[2:]
+			}
+		}
+	}
+
+	// parsing successful, so we now know the proper value for .Parts
+	info.Parts = currentParts
+
+	// parts look like: resource/resourceName/subresource/other/stuff/we/don't/interpret
+	switch {
+	case len(info.Parts) >= 3 && !specialVerbsNoSubResources.Has(info.Verb):
+		info.Subresource = info.Parts[2]
+		fallthrough
+	case len(info.Parts) >= 2:
+		info.Name = info.Parts[1]
+		fallthrough
+	case len(info.Parts) >= 1:
+		info.Resource = info.Parts[0]
+	}
+
+	info.ResourceScope = ri.resolveResourceScope(info)
+
+	if len(info.Name) == 0 && info.Verb == VerbGet {
+		info.Verb = VerbList
+	}
+
+	if len(info.Name) == 0 && info.Verb == VerbDelete {
+		info.Verb = "deletecollection"
+	}
+
 	return &info, nil
 }
 
-func WithRequestInfo(ctx context.Context, info Info) context.Context {
+func WithRequestInfo(ctx context.Context, info *Info) context.Context {
 	return context.WithValue(ctx, requestInfoKey, info)
+}
+
+func InfoFrom(ctx context.Context) (*Info, bool) {
+	info, ok := ctx.Value(requestInfoKey).(*Info)
+	return info, ok
 }
 
 // splitPath returns the segments for a URL path.
@@ -141,4 +260,27 @@ func splitPath(path string) []string {
 		return []string{}
 	}
 	return strings.Split(path, "/")
+}
+
+const (
+	GlobalScope    = "Global"
+	ClusterScope   = "Cluster"
+	WorkspaceScope = "Workspace"
+	NamespaceScope = "Namespace"
+)
+
+func (ri *InfoFactory) resolveResourceScope(info Info) string {
+	if info.Namespace != "" {
+		return NamespaceScope
+	}
+
+	if info.Workspace != "" {
+		return WorkspaceScope
+	}
+
+	if info.Cluster != "" {
+		return ClusterScope
+	}
+
+	return GlobalScope
 }
