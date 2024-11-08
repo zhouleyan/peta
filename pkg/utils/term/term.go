@@ -15,38 +15,25 @@
  *  along with PETA. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package iputils
+package term
 
 import (
-	"net"
-	"net/http"
+	"fmt"
+	"github.com/moby/term"
+	"io"
 )
 
-const (
-	XForwardedFor = "X-Forwarded-For"
-	XRealIP       = "X-Real-IP"
-	XClientIP     = "x-client-ip"
-)
-
-func RemoteIP(req *http.Request) string {
-	remoteAddr := req.RemoteAddr
-	if ip := req.Header.Get(XClientIP); ip != "" {
-		remoteAddr = ip
-	} else if ip := req.Header.Get(XRealIP); ip != "" {
-		remoteAddr = ip
-	} else if ip = req.Header.Get(XForwardedFor); ip != "" {
-		remoteAddr = ip
-	} else {
-		remoteAddr, _, _ = net.SplitHostPort(remoteAddr)
+// Size returns the current width and height of the user's term. If it isn't a term,
+// nil is returned. On error, zero values are returned for width and height.
+// Usually w must be the stdout of the process. Stderr won't work.
+func Size(w io.Writer) (int, int, error) {
+	outFd, isTerminal := term.GetFdInfo(w)
+	if !isTerminal {
+		return 0, 0, fmt.Errorf("given writer is no term")
 	}
-
-	if remoteAddr == "::1" {
-		remoteAddr = "127.0.0.1"
+	winSize, err := term.GetWinsize(outFd)
+	if err != nil {
+		return 0, 0, err
 	}
-
-	return remoteAddr
-}
-
-func IsValidPort(port int) bool {
-	return port > 0 && port < 65535
+	return int(winSize.Width), int(winSize.Height), nil
 }

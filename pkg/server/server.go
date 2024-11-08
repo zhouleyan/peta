@@ -20,6 +20,7 @@ package server
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"fmt"
 	"github.com/emicklei/go-restful/v3"
 	"k8s.io/klog/v2"
@@ -27,9 +28,9 @@ import (
 	"peta.io/peta/pkg/apis"
 	healthzhandler "peta.io/peta/pkg/apis/healthz"
 	versionhandler "peta.io/peta/pkg/apis/version"
-	"peta.io/peta/pkg/config"
 	urlruntime "peta.io/peta/pkg/runtime"
 	"peta.io/peta/pkg/server/filters"
+	"peta.io/peta/pkg/server/options"
 	"peta.io/peta/pkg/server/request"
 	"peta.io/peta/pkg/utils/sets"
 	"peta.io/peta/pkg/version"
@@ -40,26 +41,39 @@ import (
 type APIServer struct {
 	Server *http.Server
 
-	container *restful.Container
+	*options.APIServerOptions
 
-	config *config.Config
+	container *restful.Container
 
 	VersionInfo *version.Info
 }
 
-func NewAPIServer(ctx context.Context) (*APIServer, error) {
+func NewAPIServer(ctx context.Context, o *options.APIServerOptions) (*APIServer, error) {
+	server := &http.Server{
+		Addr: fmt.Sprintf(":%d", o.InsecurePort),
+	}
+
+	if o.SecurePort != 0 {
+		certificate, err := tls.LoadX509KeyPair(o.TLSCertFile, o.TLSPrivateKey)
+		if err != nil {
+			return nil, err
+		}
+		server.TLSConfig = &tls.Config{
+			Certificates: []tls.Certificate{certificate},
+		}
+		server.Addr = fmt.Sprintf(":%d", o.SecurePort)
+	}
+
 	apiServer := &APIServer{
-		VersionInfo: version.Get(),
+		Server:           server,
+		VersionInfo:      version.Get(),
+		APIServerOptions: o,
 	}
 
 	return apiServer, nil
 }
 
 func (s *APIServer) PreRun() error {
-	server := &http.Server{
-		Addr: fmt.Sprintf(":%d", 9090),
-	}
-	s.Server = server
 
 	s.container = restful.NewContainer()
 	s.container.Router(restful.CurlyRouter{})
@@ -100,6 +114,7 @@ func (s *APIServer) Run(ctx context.Context) (err error) {
 
 	klog.V(0).Infof("Start listening on %s", s.Server.Addr)
 	if s.Server.TLSConfig != nil {
+		// TLSConfig not nil, no need to pass certFile & keyFile.
 		err = s.Server.ListenAndServeTLS("", "")
 	} else {
 		err = s.Server.ListenAndServe()
@@ -130,6 +145,10 @@ func logStackOnRecover(panicReason interface{}, w http.ResponseWriter) {
 
 func (s *APIServer) buildHandlerChain(handler http.Handler) (http.Handler, error) {
 	requestInfoResolver := &request.InfoFactory{APIPrefixes: sets.New("apis")}
+
+	// TODO: Auditing
+	// TODO: Authorization
+	// TODO: Authentication
 	handler = filters.WithRequestInfo(handler, requestInfoResolver)
 	return handler, nil
 }

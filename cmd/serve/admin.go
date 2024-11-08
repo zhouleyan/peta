@@ -22,29 +22,40 @@ import (
 	"errors"
 	"github.com/spf13/cobra"
 	"net/http"
-	"peta.io/peta/pkg/config"
 	"peta.io/peta/pkg/server"
+	"peta.io/peta/pkg/server/options"
 	"peta.io/peta/pkg/signals"
+	"peta.io/peta/pkg/utils/term"
 )
 
 func NewServerAdminCommand() *cobra.Command {
-	c := config.NewServerAdminConfig()
+	o := options.NewAPIServerOptions()
 
 	cmd := &cobra.Command{
 		Use:   "admin",
 		Short: "Start the peta admin server.",
 		Long:  ``,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return Run(signals.SetupSignalHandler(), c)
+			return Run(signals.SetupSignalHandler(), o)
 		},
+		SilenceUsage: true,
 	}
+
+	fs := cmd.Flags()
+	nfs := o.Flags()
+	for _, f := range nfs.FlagSets {
+		fs.AddFlagSet(f)
+	}
+
+	cols, _, _ := term.Size(cmd.OutOrStdout())
+	options.SetUsageAndHelpFunc(cmd, nfs, cols)
 
 	return cmd
 }
 
-func Run(ctx context.Context, c *config.Config) error {
+func Run(ctx context.Context, o *options.APIServerOptions) error {
 
-	apiServer, err := server.NewAPIServer(ctx)
+	apiServer, err := server.NewAPIServer(ctx, o)
 	if err != nil {
 		return err
 	}
