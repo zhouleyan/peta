@@ -15,11 +15,23 @@
  *  along with PETA. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package config
+package splitutils
 
-// Config is the central configuration type
-type Config struct{}
+import "strings"
 
-func NewServerAdminConfig() *Config {
-	return &Config{}
+// SplitPath returns the segments for a URL path.
+func SplitPath(path string) []string {
+	path = strings.Trim(path, "/")
+	if path == "" {
+		return []string{}
+	}
+	return strings.Split(path, "/")
+}
+
+// LastOfSlice returns the last element of the slice.
+func LastOfSlice(s []string) string {
+	if len(s) == 0 {
+		return ""
+	}
+	return s[len(s)-1]
 }

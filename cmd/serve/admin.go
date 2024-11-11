@@ -21,6 +21,7 @@ import (
 	"context"
 	"errors"
 	"github.com/spf13/cobra"
+	"k8s.io/klog/v2"
 	"net/http"
 	"peta.io/peta/pkg/server"
 	"peta.io/peta/pkg/server/options"
@@ -30,19 +31,26 @@ import (
 
 func NewServerAdminCommand() *cobra.Command {
 	o := options.NewAPIServerOptions()
+	nfs := o.Flags()
 
 	cmd := &cobra.Command{
 		Use:   "admin",
 		Short: "Start the peta admin server.",
 		Long:  ``,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// Merge config file.
+			// options.Load(o.ConfigFile)
+			c, err := options.LoadConfig(o.ConfigFile)
+			if err != nil {
+				klog.Fatal("Failed to load config from disk: %v", err)
+			}
+			o.Merge(c)
 			return Run(signals.SetupSignalHandler(), o)
 		},
 		SilenceUsage: true,
 	}
 
 	fs := cmd.Flags()
-	nfs := o.Flags()
 	for _, f := range nfs.FlagSets {
 		fs.AddFlagSet(f)
 	}

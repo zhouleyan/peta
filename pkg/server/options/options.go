@@ -23,26 +23,49 @@ import (
 	"github.com/spf13/pflag"
 	"k8s.io/klog/v2"
 	"os"
+	"peta.io/peta/pkg/server/auditing"
 	"peta.io/peta/pkg/utils/iputils"
 	"strings"
 )
 
+const (
+	defaultConfigName = "peta"
+
+	defaultConfigPath = "/etc/peta"
+
+	envPrefix = "PETA"
+)
+
 type APIServerOptions struct {
 	*ServerRunOptions
+	*Options
 	ConfigFile string
 	DebugMode  bool
 }
 
 func NewAPIServerOptions() *APIServerOptions {
-	return &APIServerOptions{
+	o := &APIServerOptions{
 		ServerRunOptions: NewServerRunOptions(),
+		Options:          NewOptions(),
+	}
+	return o
+}
+
+func (s *APIServerOptions) Merge(conf *Options) {
+	if conf == nil {
+		return
+	}
+	if s.AuditingOptions == nil {
+		s.AuditingOptions = conf.AuditingOptions
 	}
 }
 
 func (s *APIServerOptions) Flags() (nfs NamedFlagSets) {
 	fs := nfs.FlagSet("generic")
 	fs.BoolVar(&s.DebugMode, "debug", false, "enable debug mode")
-	s.ServerRunOptions.AddFlags(fs, s.ServerRunOptions)
+	fs.StringVar(&s.ConfigFile, "config", "/etc/default/peta", "config file path")
+	s.ServerRunOptions.AddFlags(fs)
+	s.AuditingOptions.AddFlags(nfs.FlagSet("auditing"))
 
 	fs = nfs.FlagSet("klog")
 	local := flag.NewFlagSet("local", flag.ExitOnError)
@@ -53,9 +76,6 @@ func (s *APIServerOptions) Flags() (nfs NamedFlagSets) {
 	})
 
 	return nfs
-}
-
-type Options struct {
 }
 
 type ServerRunOptions struct {
@@ -116,11 +136,21 @@ func (s *ServerRunOptions) Validate() []error {
 	return errs
 }
 
-func (s *ServerRunOptions) AddFlags(fs *pflag.FlagSet, c *ServerRunOptions) {
+func (s *ServerRunOptions) AddFlags(fs *pflag.FlagSet) {
 
-	fs.StringVar(&s.BindAddress, "bind-address", c.BindAddress, "server bind address")
-	fs.IntVar(&s.InsecurePort, "insecure-port", c.InsecurePort, "insecure port number")
+	fs.StringVar(&s.BindAddress, "bind-address", s.BindAddress, "server bind address")
+	fs.IntVar(&s.InsecurePort, "insecure-port", s.InsecurePort, "insecure port number")
 	fs.IntVar(&s.SecurePort, "secure-port", s.SecurePort, "secure port number")
-	fs.StringVar(&s.TLSCertFile, "tls-cert-file", c.TLSCertFile, "tls cert file")
-	fs.StringVar(&s.TLSPrivateKey, "tls-private-key", c.TLSPrivateKey, "tls private key")
+	fs.StringVar(&s.TLSCertFile, "tls-cert-file", s.TLSCertFile, "tls cert file")
+	fs.StringVar(&s.TLSPrivateKey, "tls-private-key", s.TLSPrivateKey, "tls private key")
+}
+
+type Options struct {
+	AuditingOptions *auditing.Options `json:"auditing,omitempty" yaml:"auditing,omitempty" mapstructure:"auditing"`
+}
+
+func NewOptions() *Options {
+	return &Options{
+		AuditingOptions: auditing.NewOptions(),
+	}
 }

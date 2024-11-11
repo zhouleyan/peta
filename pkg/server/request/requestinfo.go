@@ -24,6 +24,7 @@ import (
 	"peta.io/peta/pkg/apis"
 	"peta.io/peta/pkg/utils/iputils"
 	"peta.io/peta/pkg/utils/sets"
+	"peta.io/peta/pkg/utils/splitutils"
 	"strings"
 )
 
@@ -130,7 +131,7 @@ func (ri *InfoFactory) NewRequestInfo(req *http.Request) (*Info, error) {
 	// p2: "v1alpha1"
 	// p3: "version"
 	// ["apis", "version.peta.io", "v1alpha1", "version"]
-	currentParts := splitPath(req.URL.Path)
+	currentParts := splitutils.SplitPath(req.URL.Path)
 	if len(currentParts) < 3 {
 		return &info, nil
 	}
@@ -251,15 +252,6 @@ func WithRequestInfo(ctx context.Context, info *Info) context.Context {
 func InfoFrom(ctx context.Context) (*Info, bool) {
 	info, ok := ctx.Value(requestInfoKey).(*Info)
 	return info, ok
-}
-
-// splitPath returns the segments for a URL path.
-func splitPath(path string) []string {
-	path = strings.Trim(path, "/")
-	if path == "" {
-		return []string{}
-	}
-	return strings.Split(path, "/")
 }
 
 const (
