@@ -30,29 +30,35 @@ import (
 
 const (
 	defaultConfigName = "peta"
-
 	defaultConfigPath = "/etc/default/peta"
 
 	envPrefix = "PETA"
+
+	BindAddress   = "bind-address"
+	InsecurePort  = "insecure-port"
+	SecurePort    = "secure-port"
+	TLSCertFile   = "tls-cert-file"
+	TLSPrivateKey = "tls-private-key"
 )
 
 type APIServerOptions struct {
-	*ServerRunOptions
-	*Options
-	ConfigFile string
-	DebugMode  bool
+	ConfigFile        string
+	DebugMode         bool
+	*ServerRunOptions `json:"server,omitempty" yaml:"server,omitempty" mapstructure:"server"`
+	AuditingOptions   *auditing.Options `json:"auditing,omitempty" yaml:"auditing,omitempty" mapstructure:"auditing"`
 }
 
 func NewAPIServerOptions() *APIServerOptions {
 	o := &APIServerOptions{
 		ServerRunOptions: NewServerRunOptions(),
-		Options:          NewOptions(),
+		AuditingOptions:  auditing.NewOptions(),
 	}
 	return o
 }
 
-func (s *APIServerOptions) Merge(fs *pflag.FlagSet, conf *Options) {
+func (s *APIServerOptions) Merge(fs *pflag.FlagSet, conf *APIServerOptions) {
 	s.AuditingOptions.Merge(fs, conf.AuditingOptions)
+	s.ServerRunOptions.Merge(fs, conf.ServerRunOptions)
 }
 
 func (s *APIServerOptions) Flags() (nfs NamedFlagSets) {
@@ -98,7 +104,6 @@ func NewServerRunOptions() *ServerRunOptions {
 		TLSCertFile:   "",
 		TLSPrivateKey: "",
 	}
-	//s := ServerRunOptions{}
 
 	return &s
 }
@@ -107,12 +112,12 @@ func (s *ServerRunOptions) Validate() []error {
 	var errs []error
 
 	if s.SecurePort == 0 && s.InsecurePort == 0 {
-		errs = append(errs, fmt.Errorf("insecure and secure port can not be disabled at the same time"))
+		errs = append(errs, fmt.Errorf("* insecure-port and secure-port can not be disabled at the same time"))
 	}
 
 	if iputils.IsValidPort(s.SecurePort) {
 		if s.TLSCertFile == "" {
-			errs = append(errs, fmt.Errorf("tls cert file is empty while secure serving"))
+			errs = append(errs, fmt.Errorf("* tls-cert-file is empty while secure serving"))
 		} else {
 			if _, err := os.Stat(s.TLSCertFile); err != nil {
 				errs = append(errs, err)
@@ -120,7 +125,7 @@ func (s *ServerRunOptions) Validate() []error {
 		}
 
 		if s.TLSPrivateKey == "" {
-			errs = append(errs, fmt.Errorf("tls private key file is empty while secure serving"))
+			errs = append(errs, fmt.Errorf("* tls-private-key file is empty while secure serving"))
 		} else {
 			if _, err := os.Stat(s.TLSPrivateKey); err != nil {
 				errs = append(errs, err)
@@ -131,21 +136,29 @@ func (s *ServerRunOptions) Validate() []error {
 	return errs
 }
 
+func (s *ServerRunOptions) Merge(fs *pflag.FlagSet, conf *ServerRunOptions) {
+	if f := fs.Lookup(BindAddress); f != nil && !f.Changed {
+		s.BindAddress = conf.BindAddress
+	}
+	if f := fs.Lookup(InsecurePort); f != nil && !f.Changed {
+		s.InsecurePort = conf.InsecurePort
+	}
+	if f := fs.Lookup(SecurePort); f != nil && !f.Changed {
+		s.SecurePort = conf.SecurePort
+	}
+	if f := fs.Lookup(TLSCertFile); f != nil && !f.Changed {
+		s.TLSCertFile = conf.TLSCertFile
+	}
+	if f := fs.Lookup(TLSPrivateKey); f != nil && !f.Changed {
+		s.TLSPrivateKey = conf.TLSPrivateKey
+	}
+}
+
 func (s *ServerRunOptions) AddFlags(fs *pflag.FlagSet) {
 
-	fs.StringVar(&s.BindAddress, "bind-address", s.BindAddress, "server bind address")
-	fs.IntVar(&s.InsecurePort, "insecure-port", s.InsecurePort, "insecure port number")
-	fs.IntVar(&s.SecurePort, "secure-port", s.SecurePort, "secure port number")
-	fs.StringVar(&s.TLSCertFile, "tls-cert-file", s.TLSCertFile, "tls cert file")
-	fs.StringVar(&s.TLSPrivateKey, "tls-private-key", s.TLSPrivateKey, "tls private key")
-}
-
-type Options struct {
-	AuditingOptions *auditing.Options `json:"auditing,omitempty" yaml:"auditing,omitempty" mapstructure:"auditing"`
-}
-
-func NewOptions() *Options {
-	return &Options{
-		AuditingOptions: auditing.NewOptions(),
-	}
+	fs.StringVar(&s.BindAddress, BindAddress, s.BindAddress, "server bind address")
+	fs.IntVar(&s.InsecurePort, InsecurePort, s.InsecurePort, "insecure port number")
+	fs.IntVar(&s.SecurePort, SecurePort, s.SecurePort, "secure port number")
+	fs.StringVar(&s.TLSCertFile, TLSCertFile, s.TLSCertFile, "tls cert file")
+	fs.StringVar(&s.TLSPrivateKey, TLSPrivateKey, s.TLSPrivateKey, "tls private key")
 }

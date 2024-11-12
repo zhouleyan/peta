@@ -20,7 +20,9 @@ package serve
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"k8s.io/klog/v2"
 	"net/http"
 	"peta.io/peta/pkg/server"
@@ -29,30 +31,27 @@ import (
 )
 
 func NewServerAdminCommand(o *options.APIServerOptions, nfs options.NamedFlagSets) *cobra.Command {
+	o.AuditingOptions.AddFlags(nfs.Insert("auditing", 1))
+
 	cmd := &cobra.Command{
 		Use:   "admin",
 		Short: "Start the peta admin server.",
 		Long:  ``,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			c, err := options.LoadConfig(o.ConfigFile)
+			o, err := MergeConfig(cmd.Flags(), o)
 			if err != nil {
-				klog.Fatal("Failed to load config from disk: %v", err)
+				return fmt.Errorf("misconfiguration \n%v", err)
 			}
-			o.Merge(cmd.Flags(), c)
 			return Run(signals.SetupSignalHandler(), o)
 		},
 		SilenceUsage: true,
 	}
-
-	o.AuditingOptions.AddFlags(nfs.Insert("auditing", 1))
-
 	fs := cmd.Flags()
 	for _, f := range nfs.FlagSets {
 		fs.AddFlagSet(f)
 	}
 
 	options.SetUsageAndHelpFunc(cmd, nfs)
-
 	return cmd
 }
 
@@ -72,4 +71,13 @@ func Run(ctx context.Context, o *options.APIServerOptions) error {
 	}
 
 	return err
+}
+
+func MergeConfig(fs *pflag.FlagSet, o *options.APIServerOptions) (*options.APIServerOptions, error) {
+	c, err := options.LoadConfig(o.ConfigFile)
+	if err != nil {
+		klog.Fatal("Failed to load config from disk: %v", err)
+	}
+	o.Merge(fs, c)
+	return o, errors.Join(o.Validate()...)
 }

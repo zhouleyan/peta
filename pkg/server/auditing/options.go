@@ -17,7 +17,9 @@
 
 package auditing
 
-import "github.com/spf13/pflag"
+import (
+	"github.com/spf13/pflag"
+)
 
 type Options struct {
 	Enable bool `json:"enable" yaml:"enable"`
@@ -34,8 +36,8 @@ func NewOptions() *Options {
 }
 
 func (o *Options) Validate() []error {
-	errors := make([]error, 0)
-	return errors
+	var errs []error
+	return errs
 }
 
 func (o *Options) AddFlags(fs *pflag.FlagSet) {

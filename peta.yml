@@ -1,2 +1,6 @@
+server:
+  bindAddress: 0.0.0.0
+  insecurePort: 9090
+
 auditing:
   enable: true

@@ -28,11 +28,11 @@ type Config struct {
 	loadOnce sync.Once
 	name     string
 	path     string
-	options  *Options
+	options  *APIServerOptions
 }
 
 // LoadConfig load config file.
-func LoadConfig(path string) (*Options, error) {
+func LoadConfig(path string) (*APIServerOptions, error) {
 	name := splitutils.LastOfSlice(splitutils.SplitPath(path))
 	if name == "" {
 		name = defaultConfigName
@@ -53,14 +53,14 @@ func LoadConfig(path string) (*Options, error) {
 		loadOnce: sync.Once{},
 		name:     name,
 		path:     path,
-		options:  NewOptions(),
+		options:  NewAPIServerOptions(),
 	}
 
 	// 2.load from disk.
 	return c.loadFromDisk()
 }
 
-func (c *Config) loadFromDisk() (*Options, error) {
+func (c *Config) loadFromDisk() (*APIServerOptions, error) {
 	var err error
 	c.loadOnce.Do(func() {
 		if err = viper.ReadInConfig(); err != nil {
