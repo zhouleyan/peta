@@ -26,37 +26,32 @@ import (
 	"peta.io/peta/pkg/server"
 	"peta.io/peta/pkg/server/options"
 	"peta.io/peta/pkg/signals"
-	"peta.io/peta/pkg/utils/term"
 )
 
-func NewServerAdminCommand() *cobra.Command {
-	o := options.NewAPIServerOptions()
-	nfs := o.Flags()
-
+func NewServerAdminCommand(o *options.APIServerOptions, nfs options.NamedFlagSets) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "admin",
 		Short: "Start the peta admin server.",
 		Long:  ``,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// Merge config file.
-			// options.Load(o.ConfigFile)
 			c, err := options.LoadConfig(o.ConfigFile)
 			if err != nil {
 				klog.Fatal("Failed to load config from disk: %v", err)
 			}
-			o.Merge(c)
+			o.Merge(cmd.Flags(), c)
 			return Run(signals.SetupSignalHandler(), o)
 		},
 		SilenceUsage: true,
 	}
+
+	o.AuditingOptions.AddFlags(nfs.Insert("auditing", 1))
 
 	fs := cmd.Flags()
 	for _, f := range nfs.FlagSets {
 		fs.AddFlagSet(f)
 	}
 
-	cols, _, _ := term.Size(cmd.OutOrStdout())
-	options.SetUsageAndHelpFunc(cmd, nfs, cols)
+	options.SetUsageAndHelpFunc(cmd, nfs)
 
 	return cmd
 }

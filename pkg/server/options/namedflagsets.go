@@ -23,6 +23,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"io"
+	"peta.io/peta/pkg/utils/term"
 	"strings"
 )
 
@@ -56,6 +57,23 @@ func (nfs *NamedFlagSets) FlagSet(name string) *pflag.FlagSet {
 		}
 		nfs.FlagSets[name] = flagSet
 		nfs.Order = append(nfs.Order, name)
+	}
+	return nfs.FlagSets[name]
+}
+
+// Insert inserts the passed flag set to the specific index.
+func (nfs *NamedFlagSets) Insert(name string, index int) *pflag.FlagSet {
+	if nfs.FlagSets == nil {
+		nfs.FlagSets = map[string]*pflag.FlagSet{}
+	}
+	if _, ok := nfs.FlagSets[name]; !ok {
+		flagSet := pflag.NewFlagSet(name, pflag.ExitOnError)
+		flagSet.SetNormalizeFunc(pflag.CommandLine.GetNormalizeFunc())
+		if nfs.NormalizeNameFunc != nil {
+			flagSet.SetNormalizeFunc(nfs.NormalizeNameFunc)
+		}
+		nfs.FlagSets[name] = flagSet
+		nfs.Order = append(nfs.Order[:index], append([]string{name}, nfs.Order[index:]...)...)
 	}
 	return nfs.FlagSets[name]
 }
@@ -94,7 +112,8 @@ func PrintSections(w io.Writer, fss NamedFlagSets, cols int) {
 
 // SetUsageAndHelpFunc set both usage and help function.
 // Print the flag sets we need instead of all of them.
-func SetUsageAndHelpFunc(cmd *cobra.Command, fss NamedFlagSets, cols int) {
+func SetUsageAndHelpFunc(cmd *cobra.Command, fss NamedFlagSets) {
+	cols, _, _ := term.Size(cmd.OutOrStdout())
 	cmd.SetUsageFunc(func(cmd *cobra.Command) error {
 		_, _ = fmt.Fprintf(cmd.OutOrStderr(), usageFmt, cmd.UseLine())
 		PrintSections(cmd.OutOrStderr(), fss, cols)

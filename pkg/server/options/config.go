@@ -34,6 +34,9 @@ type Config struct {
 // LoadConfig load config file.
 func LoadConfig(path string) (*Options, error) {
 	name := splitutils.LastOfSlice(splitutils.SplitPath(path))
+	if name == "" {
+		name = defaultConfigName
+	}
 	// 1.make a config
 	viper.SetConfigName(name)
 	viper.AddConfigPath(path)

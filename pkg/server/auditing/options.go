@@ -23,6 +23,12 @@ type Options struct {
 	Enable bool `json:"enable" yaml:"enable"`
 }
 
+func (o *Options) Merge(fs *pflag.FlagSet, conf *Options) {
+	if f := fs.Lookup("auditing-enabled"); f != nil && !f.Changed {
+		o.Enable = conf.Enable
+	}
+}
+
 func NewOptions() *Options {
 	return &Options{}
 }
@@ -33,5 +39,5 @@ func (o *Options) Validate() []error {
 }
 
 func (o *Options) AddFlags(fs *pflag.FlagSet) {
-	fs.BoolVar(&o.Enable, "auditing-enabled", o.Enable, "Enable auditing component or not.")
+	fs.BoolVar(&o.Enable, "auditing-enabled", o.Enable, "enable auditing component or not")
 }

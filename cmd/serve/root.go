@@ -17,7 +17,10 @@
 
 package serve
 
-import "github.com/spf13/cobra"
+import (
+	"github.com/spf13/cobra"
+	"peta.io/peta/pkg/server/options"
+)
 
 func NewServeCommand() *cobra.Command {
 	return &cobra.Command{
@@ -28,8 +31,16 @@ func NewServeCommand() *cobra.Command {
 }
 
 func RegisterCommands(parent *cobra.Command) {
+	o := options.NewAPIServerOptions()
+	nfs := o.Flags()
 	cmd := NewServeCommand()
-	parent.AddCommand(cmd)
+	fs := cmd.PersistentFlags()
+	for _, f := range nfs.FlagSets {
+		fs.AddFlagSet(f)
+	}
 
-	cmd.AddCommand(NewServerAdminCommand())
+	options.SetUsageAndHelpFunc(cmd, nfs)
+
+	parent.AddCommand(cmd)
+	cmd.AddCommand(NewServerAdminCommand(o, nfs))
 }

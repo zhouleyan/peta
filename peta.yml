@@ -1,2 +1,2 @@
 auditing:
-  enable: false
+  enable: true

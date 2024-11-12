@@ -31,7 +31,7 @@ import (
 const (
 	defaultConfigName = "peta"
 
-	defaultConfigPath = "/etc/peta"
+	defaultConfigPath = "/etc/default/peta"
 
 	envPrefix = "PETA"
 )
@@ -51,21 +51,15 @@ func NewAPIServerOptions() *APIServerOptions {
 	return o
 }
 
-func (s *APIServerOptions) Merge(conf *Options) {
-	if conf == nil {
-		return
-	}
-	if s.AuditingOptions == nil {
-		s.AuditingOptions = conf.AuditingOptions
-	}
+func (s *APIServerOptions) Merge(fs *pflag.FlagSet, conf *Options) {
+	s.AuditingOptions.Merge(fs, conf.AuditingOptions)
 }
 
 func (s *APIServerOptions) Flags() (nfs NamedFlagSets) {
 	fs := nfs.FlagSet("generic")
 	fs.BoolVar(&s.DebugMode, "debug", false, "enable debug mode")
-	fs.StringVar(&s.ConfigFile, "config", "/etc/default/peta", "config file path")
+	fs.StringVar(&s.ConfigFile, "config", defaultConfigPath, "config file path")
 	s.ServerRunOptions.AddFlags(fs)
-	s.AuditingOptions.AddFlags(nfs.FlagSet("auditing"))
 
 	fs = nfs.FlagSet("klog")
 	local := flag.NewFlagSet("local", flag.ExitOnError)
@@ -80,19 +74,19 @@ func (s *APIServerOptions) Flags() (nfs NamedFlagSets) {
 
 type ServerRunOptions struct {
 	// server bind address
-	BindAddress string
+	BindAddress string `json:"bindAddress,omitempty" yaml:"bindAddress,omitempty" mapstructure:"bindAddress"`
 
 	// insecure port number
-	InsecurePort int
+	InsecurePort int `json:"insecurePort,omitempty" yaml:"insecurePort,omitempty" mapstructure:"insecurePort"`
 
 	// secure port number
-	SecurePort int
+	SecurePort int `json:"securePort,omitempty" yaml:"securePort,omitempty" mapstructure:"securePort"`
 
 	// tls cert file
-	TLSCertFile string
+	TLSCertFile string `json:"tlsCertFile,omitempty" yaml:"tlsCertFile,omitempty" mapstructure:"tlsCertFile"`
 
 	// tls private key file
-	TLSPrivateKey string
+	TLSPrivateKey string `json:"tlsPrivateKey,omitempty" yaml:"tlsPrivateKey,omitempty" mapstructure:"tlsPrivateKey"`
 }
 
 func NewServerRunOptions() *ServerRunOptions {
@@ -104,6 +98,7 @@ func NewServerRunOptions() *ServerRunOptions {
 		TLSCertFile:   "",
 		TLSPrivateKey: "",
 	}
+	//s := ServerRunOptions{}
 
 	return &s
 }
