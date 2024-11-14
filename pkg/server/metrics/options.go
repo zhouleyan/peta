@@ -15,15 +15,33 @@
  *  along with PETA. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package filters
+package metrics
 
-import (
-	"net/http"
+import "github.com/spf13/pflag"
+
+const (
+	Enabled = "metrics-enabled"
 )
 
-func WithGlobalFilter(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		//TODO: WithGlobalFilter
-		next.ServeHTTP(w, req)
-	})
+type Options struct {
+	Enable bool `json:"enable" yaml:"enable"`
+}
+
+func (o *Options) Merge(fs *pflag.FlagSet, conf *Options) {
+	if f := fs.Lookup(Enabled); f != nil && !f.Changed {
+		o.Enable = conf.Enable
+	}
+}
+
+func NewOptions() *Options {
+	return &Options{}
+}
+
+func (o *Options) Validate() []error {
+	var errs []error
+	return errs
+}
+
+func (o *Options) AddFlags(fs *pflag.FlagSet) {
+	fs.BoolVar(&o.Enable, Enabled, o.Enable, "enable api server metrics or not")
 }

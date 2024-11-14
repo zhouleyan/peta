@@ -31,7 +31,7 @@ import (
 )
 
 func NewServerAdminCommand(o *options.APIServerOptions, nfs options.NamedFlagSets) *cobra.Command {
-	o.AuditingOptions.AddFlags(nfs.Insert("auditing", 1))
+	AddFlags(o, nfs)
 
 	cmd := &cobra.Command{
 		Use:   "admin",
@@ -80,4 +80,9 @@ func MergeConfig(fs *pflag.FlagSet, o *options.APIServerOptions) (*options.APISe
 	}
 	o.Merge(fs, c)
 	return o, errors.Join(o.Validate()...)
+}
+
+func AddFlags(o *options.APIServerOptions, nfs options.NamedFlagSets) {
+	o.MetricsOptions.AddFlags(nfs.Insert("metrics", 1))
+	o.AuditingOptions.AddFlags(nfs.Insert("auditing", 1))
 }

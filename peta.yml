@@ -4,3 +4,6 @@ server:
 
 auditing:
   enable: true
+
+metrics:
+  enable: true

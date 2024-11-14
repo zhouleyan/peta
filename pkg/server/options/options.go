@@ -24,6 +24,7 @@ import (
 	"k8s.io/klog/v2"
 	"os"
 	"peta.io/peta/pkg/server/auditing"
+	"peta.io/peta/pkg/server/metrics"
 	"peta.io/peta/pkg/utils/iputils"
 	"strings"
 )
@@ -46,12 +47,14 @@ type APIServerOptions struct {
 	DebugMode         bool
 	*ServerRunOptions `json:"server,omitempty" yaml:"server,omitempty" mapstructure:"server"`
 	AuditingOptions   *auditing.Options `json:"auditing,omitempty" yaml:"auditing,omitempty" mapstructure:"auditing"`
+	MetricsOptions    *metrics.Options  `json:"metrics,omitempty" yaml:"metrics,omitempty" mapstructure:"metrics"`
 }
 
 func NewAPIServerOptions() *APIServerOptions {
 	o := &APIServerOptions{
 		ServerRunOptions: NewServerRunOptions(),
 		AuditingOptions:  auditing.NewOptions(),
+		MetricsOptions:   metrics.NewOptions(),
 	}
 	return o
 }
@@ -59,6 +62,7 @@ func NewAPIServerOptions() *APIServerOptions {
 func (s *APIServerOptions) Merge(fs *pflag.FlagSet, conf *APIServerOptions) {
 	s.AuditingOptions.Merge(fs, conf.AuditingOptions)
 	s.ServerRunOptions.Merge(fs, conf.ServerRunOptions)
+	s.MetricsOptions.Merge(fs, conf.MetricsOptions)
 }
 
 func (s *APIServerOptions) Flags() (nfs NamedFlagSets) {

@@ -15,15 +15,17 @@
  *  along with PETA. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package filters
+package metrics
 
 import (
-	"net/http"
+	"github.com/emicklei/go-restful/v3"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-func WithGlobalFilter(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		//TODO: WithGlobalFilter
-		next.ServeHTTP(w, req)
-	})
+func Install(c *restful.Container) {
+	c.Handle("/metrics", promhttp.InstrumentMetricHandler(
+		prometheus.DefaultRegisterer,
+		promhttp.HandlerFor(prometheus.DefaultGatherer, promhttp.HandlerOpts{}),
+	))
 }

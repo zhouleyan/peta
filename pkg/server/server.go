@@ -30,6 +30,7 @@ import (
 	versionhandler "peta.io/peta/pkg/apis/version"
 	urlruntime "peta.io/peta/pkg/runtime"
 	"peta.io/peta/pkg/server/filters"
+	"peta.io/peta/pkg/server/metrics"
 	"peta.io/peta/pkg/server/options"
 	"peta.io/peta/pkg/server/request"
 	"peta.io/peta/pkg/utils/sets"
@@ -83,6 +84,11 @@ func (s *APIServer) PreRun() error {
 
 	// install APIs
 	s.installPETAAPIs()
+
+	if s.MetricsOptions.Enable {
+		s.installMetricsAPIs()
+	}
+
 	s.installHealthz()
 
 	for _, ws := range s.container.RegisteredWebServices() {
@@ -94,7 +100,6 @@ func (s *APIServer) PreRun() error {
 		return fmt.Errorf("failed to build handler chain: %w", err)
 	}
 
-	//TODO: s.Server.Handler = filters.WithGlobalFilter(combinedHandler)
 	s.Server.Handler = combinedHandler
 
 	return nil
@@ -149,6 +154,9 @@ func (s *APIServer) buildHandlerChain(handler http.Handler) (http.Handler, error
 	// TODO: Auditing
 	// TODO: Authorization
 	// TODO: Authentication
+	if s.MetricsOptions.Enable {
+		handler = filters.WithMetrics(handler)
+	}
 	handler = filters.WithRequestInfo(handler, requestInfoResolver)
 	return handler, nil
 }
@@ -171,4 +179,8 @@ func (s *APIServer) installHealthz() {
 	)
 
 	urlruntime.Must(handler.AddToContainer(s.container))
+}
+
+func (s *APIServer) installMetricsAPIs() {
+	metrics.Install(s.container)
 }
