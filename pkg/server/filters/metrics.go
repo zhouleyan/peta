@@ -19,9 +19,11 @@ package filters
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
+	"k8s.io/klog/v2"
 	"net/http"
 	"peta.io/peta/pkg/server/request"
 	"peta.io/peta/pkg/server/responsewriter"
+	"peta.io/peta/pkg/utils/iputils"
 	"strconv"
 	"sync"
 	"time"
@@ -90,8 +92,10 @@ func WithMetrics(next http.Handler) http.Handler {
 		wrapper := responsewriter.NewMetaResponseWriter(w)
 		reqSz := computeApproximateRequestSize(req)
 		start := time.Now()
+
 		next.ServeHTTP(responsewriter.WrapForHTTP1Or2(wrapper), req)
-		elapsed := float64(time.Now().Sub(start)) / float64(time.Second)
+
+		elapsed := time.Since(start)
 
 		info, exists := request.InfoFrom(req.Context())
 		if exists {
@@ -107,10 +111,27 @@ func WithMetrics(next http.Handler) http.Handler {
 			values[8] = strconv.Itoa(wrapper.StatusCode)
 
 			requestCount.WithLabelValues(values...).Inc()
-			requestDuration.WithLabelValues(values...).Observe(elapsed)
+			requestDuration.WithLabelValues(values...).Observe(elapsed.Seconds())
 			requestSize.WithLabelValues(values...).Observe(float64(reqSz))
 			responseSize.WithLabelValues(values...).Observe(float64(wrapper.Size))
 		}
+
+		// Record log for each request
+		logWithVerbose := klog.V(4)
+		// Always log error response
+		if wrapper.StatusCode > http.StatusBadRequest {
+			logWithVerbose = klog.V(0)
+		}
+
+		logWithVerbose.Infof("%s - \"%s %s %s\" %d %d %dms",
+			iputils.RemoteIP(req),
+			req.Method,
+			req.URL,
+			req.Proto,
+			wrapper.StatusCode,
+			wrapper.Size,
+			elapsed.Milliseconds(),
+		)
 	})
 }
 
