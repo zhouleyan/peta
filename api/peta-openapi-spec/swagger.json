@@ -11,7 +11,25 @@
     "version": "v0.0.1"
   },
   "paths": {
-    "/apis/version.peta.io/v1alpha1/version": {
+    "/apis/config.peta.io/v1alpha2/configs/configz": {
+      "get": {
+        "description": "Information about the peta configurations",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "Configurations"
+        ],
+        "summary": "PETA configurations",
+        "operationId": "peta-config",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/apis/version.peta.io/version": {
       "get": {
         "produces": [
           "application/json"
@@ -156,6 +174,9 @@
     }
   ],
   "tags": [
+    {
+      "name": "Configurations"
+    },
     {
       "name": "NonResource APIs"
     }

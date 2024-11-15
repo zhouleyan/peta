@@ -32,6 +32,7 @@ import (
 	"os"
 	"os/exec"
 	"peta.io/peta/pkg/apis"
+	configv1alpha2 "peta.io/peta/pkg/apis/config/v1alpha2"
 	"peta.io/peta/pkg/apis/healthz"
 	"peta.io/peta/pkg/apis/version"
 	urlruntime "peta.io/peta/pkg/runtime"
@@ -87,6 +88,7 @@ func generateSwaggerJSON() []byte {
 	handlers := []apis.Handler{
 		version.NewFakeHandler(),
 		healthz.NewFakeHandler(),
+		configv1alpha2.NewFakeHandler(),
 	}
 
 	for _, h := range handlers {
@@ -134,6 +136,11 @@ func enrichSwaggerObject(swo *spec.Swagger) {
 	swo.Security = []map[string][]string{{"BearerToken": []string{}}}
 
 	swo.Tags = []spec.Tag{
+		{
+			TagProps: spec.TagProps{
+				Name: apis.TagConfigurations,
+			},
+		},
 		{
 			TagProps: spec.TagProps{
 				Name: apis.TagNonResourceAPI,

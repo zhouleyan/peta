@@ -15,16 +15,35 @@
  *  along with PETA. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package apis
+package v1alpha2
+
+import (
+	restfulspec "github.com/emicklei/go-restful-openapi/v2"
+	"github.com/emicklei/go-restful/v3"
+	"peta.io/peta/pkg/apis"
+)
 
 const (
-	StatusOK = "ok"
-
-	WorkspaceNone = ""
-
-	ClusterNone = ""
-
-	TagNonResourceAPI = "NonResource APIs"
-
-	TagConfigurations = "Configurations"
+	GroupName = "config.peta.io"
 )
+
+var GroupVersion = apis.GroupVersion{
+	Group:   GroupName,
+	Version: "v1alpha2",
+}
+
+func (h *handler) AddToContainer(container *restful.Container) error {
+	ws := apis.NewWebService(GroupVersion)
+
+	ws.Route(ws.GET("/configs/configz").
+		Doc("PETA configurations").
+		Operation("peta-config").
+		Metadata(restfulspec.KeyOpenAPITags, []string{apis.TagConfigurations}).
+		Notes("Information about the peta configurations").
+		To(func(request *restful.Request, response *restful.Response) {
+			_ = response.WriteAsJson(h.config)
+		}))
+
+	container.Add(ws)
+	return nil
+}

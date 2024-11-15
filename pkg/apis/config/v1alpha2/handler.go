@@ -15,16 +15,20 @@
  *  along with PETA. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package apis
+package v1alpha2
 
-const (
-	StatusOK = "ok"
-
-	WorkspaceNone = ""
-
-	ClusterNone = ""
-
-	TagNonResourceAPI = "NonResource APIs"
-
-	TagConfigurations = "Configurations"
+import (
+	"peta.io/peta/pkg/apis"
+	"peta.io/peta/pkg/server/options"
 )
+
+type handler struct {
+	config *options.APIServerOptions
+}
+
+func NewHandler(config *options.APIServerOptions) apis.Handler {
+	return &handler{config: config}
+}
+func NewFakeHandler() apis.Handler {
+	return &handler{}
+}
