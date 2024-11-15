@@ -100,6 +100,7 @@ func (s *APIServer) PreRun() error {
 		return fmt.Errorf("failed to build handler chain: %w", err)
 	}
 
+	//s.Server.Handler = filters.WithGlobalFilter(combinedHandler)
 	s.Server.Handler = combinedHandler
 
 	return nil
@@ -154,10 +155,11 @@ func (s *APIServer) buildHandlerChain(handler http.Handler) (http.Handler, error
 	// TODO: Auditing
 	// TODO: Authorization
 	// TODO: Authentication
+
+	handler = filters.WithRequestInfo(handler, requestInfoResolver)
 	if s.MetricsOptions.Enable {
 		handler = filters.WithMetrics(handler)
 	}
-	handler = filters.WithRequestInfo(handler, requestInfoResolver)
 	return handler, nil
 }
 

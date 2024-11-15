@@ -23,7 +23,6 @@ import (
 
 func WithGlobalFilter(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		//TODO: WithGlobalFilter
 		next.ServeHTTP(w, req)
 	})
 }
