@@ -27,7 +27,7 @@ import (
 
 var GroupVersion = apis.GroupVersion{
 	Group:   "version.peta.io",
-	Version: "v1alpha1",
+	Version: "",
 }
 
 func NewHandler(versionInfo *version.Info) apis.Handler {
