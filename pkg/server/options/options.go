@@ -69,7 +69,8 @@ func (s *APIServerOptions) Merge(fs *pflag.FlagSet, conf *APIServerOptions) {
 	s.DatabaseOptions.Merge(fs, conf.DatabaseOptions)
 }
 
-func (s *APIServerOptions) Flags() (nfs NamedFlagSets) {
+func (s *APIServerOptions) Flags() *NamedFlagSets {
+	nfs := new(NamedFlagSets)
 	fs := nfs.FlagSet("generic")
 	fs.BoolVar(&s.DebugMode, "debug", false, "enable debug mode")
 	fs.StringVar(&s.ConfigFile, "config", defaultConfigPath, "config file path")

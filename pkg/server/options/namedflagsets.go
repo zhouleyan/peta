@@ -80,7 +80,7 @@ func (nfs *NamedFlagSets) Insert(name string, index int) *pflag.FlagSet {
 
 // PrintSections prints the given names flag sets in sections, with the maximal given column number.
 // If cols is zero, lines are not wrapped.
-func PrintSections(w io.Writer, fss NamedFlagSets, cols int) {
+func PrintSections(w io.Writer, fss *NamedFlagSets, cols int) {
 	for _, name := range fss.Order {
 		fs := fss.FlagSets[name]
 		if !fs.HasFlags() {
@@ -112,7 +112,7 @@ func PrintSections(w io.Writer, fss NamedFlagSets, cols int) {
 
 // SetUsageAndHelpFunc set both usage and help function.
 // Print the flag sets we need instead of all of them.
-func SetUsageAndHelpFunc(cmd *cobra.Command, fss NamedFlagSets) {
+func SetUsageAndHelpFunc(cmd *cobra.Command, fss *NamedFlagSets) {
 	cols, _, _ := term.Size(cmd.OutOrStdout())
 	cmd.SetUsageFunc(func(cmd *cobra.Command) error {
 		_, _ = fmt.Fprintf(cmd.OutOrStderr(), usageFmt, cmd.UseLine())

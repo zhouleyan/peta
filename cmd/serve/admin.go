@@ -30,7 +30,7 @@ import (
 	"peta.io/peta/pkg/signals"
 )
 
-func NewServerAdminCommand(o *options.APIServerOptions, nfs options.NamedFlagSets) *cobra.Command {
+func NewServerAdminCommand(o *options.APIServerOptions, nfs *options.NamedFlagSets) *cobra.Command {
 	AddFlags(o, nfs)
 
 	cmd := &cobra.Command{
@@ -82,7 +82,7 @@ func MergeConfig(fs *pflag.FlagSet, o *options.APIServerOptions) (*options.APISe
 	return o, errors.Join(o.Validate()...)
 }
 
-func AddFlags(o *options.APIServerOptions, nfs options.NamedFlagSets) {
+func AddFlags(o *options.APIServerOptions, nfs *options.NamedFlagSets) {
 	o.AuditingOptions.AddFlags(nfs.Insert("auditing", 1))
 	o.MetricsOptions.AddFlags(nfs.Insert("metrics", 1))
 	o.DatabaseOptions.AddFlags(nfs.Insert("database", 1))
