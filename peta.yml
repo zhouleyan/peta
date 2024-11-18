@@ -2,8 +2,17 @@ server:
   bindAddress: 0.0.0.0
   insecurePort: 9090
 
-auditing:
-  enable: true
+database:
+  database: peta2
+  dialect: mysql
+  host: 10.1.1.13
+  port: 3306
+  user: zly
+  password: zly123456!
+  url: ""
 
 metrics:
+  enable: true
+
+auditing:
   enable: true

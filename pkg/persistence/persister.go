@@ -15,15 +15,23 @@
  *  along with PETA. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package options
+package persistence
 
-// Validate validates api server options, to find
-// options' misconfiguration
-func (s *APIServerOptions) Validate() []error {
-	var errs []error
-	errs = append(errs, s.ServerRunOptions.Validate()...)
-	errs = append(errs, s.MetricsOptions.Validate()...)
-	errs = append(errs, s.AuditingOptions.Validate()...)
-	errs = append(errs, s.DatabaseOptions.Validate()...)
-	return errs
+import "github.com/gobuffalo/pop/v6"
+
+// persister is the Persister interface connecting to the database and capable of doing migrations.
+type persister struct {
+	Conn *pop.Connection
+}
+
+type Persister interface{}
+
+type Migrator interface {
+	MigrateUp() error
+	MigrateDown(int) error
+}
+
+type Storage interface {
+	Migrator
+	Persister
 }

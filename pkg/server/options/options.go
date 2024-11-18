@@ -23,6 +23,7 @@ import (
 	"github.com/spf13/pflag"
 	"k8s.io/klog/v2"
 	"os"
+	"peta.io/peta/pkg/persistence"
 	"peta.io/peta/pkg/server/auditing"
 	"peta.io/peta/pkg/server/metrics"
 	"peta.io/peta/pkg/utils/iputils"
@@ -46,8 +47,9 @@ type APIServerOptions struct {
 	ConfigFile        string
 	DebugMode         bool
 	*ServerRunOptions `json:"server,omitempty" yaml:"server,omitempty" mapstructure:"server"`
-	AuditingOptions   *auditing.Options `json:"auditing,omitempty" yaml:"auditing,omitempty" mapstructure:"auditing"`
-	MetricsOptions    *metrics.Options  `json:"metrics,omitempty" yaml:"metrics,omitempty" mapstructure:"metrics"`
+	AuditingOptions   *auditing.Options    `json:"auditing,omitempty" yaml:"auditing,omitempty" mapstructure:"auditing"`
+	MetricsOptions    *metrics.Options     `json:"metrics,omitempty" yaml:"metrics,omitempty" mapstructure:"metrics"`
+	DatabaseOptions   *persistence.Options `json:"database,omitempty" yaml:"database,omitempty" mapstructure:"database"`
 }
 
 func NewAPIServerOptions() *APIServerOptions {
@@ -55,6 +57,7 @@ func NewAPIServerOptions() *APIServerOptions {
 		ServerRunOptions: NewServerRunOptions(),
 		AuditingOptions:  auditing.NewOptions(),
 		MetricsOptions:   metrics.NewOptions(),
+		DatabaseOptions:  persistence.NewOptions(),
 	}
 	return o
 }
@@ -63,6 +66,7 @@ func (s *APIServerOptions) Merge(fs *pflag.FlagSet, conf *APIServerOptions) {
 	s.AuditingOptions.Merge(fs, conf.AuditingOptions)
 	s.ServerRunOptions.Merge(fs, conf.ServerRunOptions)
 	s.MetricsOptions.Merge(fs, conf.MetricsOptions)
+	s.DatabaseOptions.Merge(fs, conf.DatabaseOptions)
 }
 
 func (s *APIServerOptions) Flags() (nfs NamedFlagSets) {

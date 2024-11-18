@@ -83,6 +83,7 @@ func MergeConfig(fs *pflag.FlagSet, o *options.APIServerOptions) (*options.APISe
 }
 
 func AddFlags(o *options.APIServerOptions, nfs options.NamedFlagSets) {
-	o.MetricsOptions.AddFlags(nfs.Insert("metrics", 1))
 	o.AuditingOptions.AddFlags(nfs.Insert("auditing", 1))
+	o.MetricsOptions.AddFlags(nfs.Insert("metrics", 1))
+	o.DatabaseOptions.AddFlags(nfs.Insert("database", 1))
 }
