@@ -17,14 +17,57 @@
 
 package persistence
 
-import "github.com/gobuffalo/pop/v6"
+import (
+	"embed"
+	"github.com/gobuffalo/pop/v6"
+	"strconv"
+	"time"
+)
+
+//go:embed migrations/*
+var migrations embed.FS
+
+var _ Storage = &persister{}
 
 // persister is the Persister interface connecting to the database and capable of doing migrations.
 type persister struct {
 	Conn *pop.Connection
 }
 
-type Persister interface{}
+func New(options *Options) (Storage, error) {
+	connectionDetails := &pop.ConnectionDetails{
+		Pool:            5,
+		IdlePool:        0,
+		ConnMaxIdleTime: 5 * time.Minute,
+		ConnMaxLifetime: 1 * time.Hour,
+	}
+	if len(options.URL) > 0 {
+		connectionDetails.URL = options.URL
+	} else {
+		connectionDetails.Database = options.Database
+		connectionDetails.Dialect = options.Dialect
+		connectionDetails.Host = options.Host
+		connectionDetails.Port = strconv.Itoa(options.Port)
+		connectionDetails.User = options.User
+		connectionDetails.Password = options.Password
+	}
+
+	conn, err := pop.NewConnection(connectionDetails)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := conn.Open(); err != nil {
+		return nil, err
+	}
+
+	return &persister{Conn: conn}, nil
+}
+
+type Persister interface {
+	GetConnection() *pop.Connection
+	Transaction(fn func(tx *pop.Connection) error) error
+}
 
 type Migrator interface {
 	MigrateUp() error
@@ -34,4 +77,38 @@ type Migrator interface {
 type Storage interface {
 	Migrator
 	Persister
+}
+
+func (p *persister) GetConnection() *pop.Connection {
+	return p.Conn
+}
+
+func (p *persister) Transaction(fn func(tx *pop.Connection) error) error {
+	return p.Conn.Transaction(fn)
+}
+
+// MigrateUp applies all pending up migrations to the Database
+func (p *persister) MigrateUp() error {
+	migrationBox, err := pop.NewMigrationBox(migrations, p.Conn)
+	if err != nil {
+		return err
+	}
+	err = migrationBox.Up()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// MigrateDown migrates the Database down by the given number of steps
+func (p *persister) MigrateDown(steps int) error {
+	migrationBox, err := pop.NewMigrationBox(migrations, p.Conn)
+	if err != nil {
+		return err
+	}
+	err = migrationBox.Down(steps)
+	if err != nil {
+		return err
+	}
+	return nil
 }

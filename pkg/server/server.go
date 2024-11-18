@@ -29,6 +29,7 @@ import (
 	configv1alpha2 "peta.io/peta/pkg/apis/config/v1alpha2"
 	healthzhandler "peta.io/peta/pkg/apis/healthz"
 	versionhandler "peta.io/peta/pkg/apis/version"
+	"peta.io/peta/pkg/persistence"
 	urlruntime "peta.io/peta/pkg/runtime"
 	"peta.io/peta/pkg/server/filters"
 	"peta.io/peta/pkg/server/metrics"
@@ -46,6 +47,8 @@ type APIServer struct {
 	*options.APIServerOptions
 
 	container *restful.Container
+
+	Storage persistence.Storage
 
 	VersionInfo *version.Info
 }
@@ -70,6 +73,12 @@ func NewAPIServer(ctx context.Context, o *options.APIServerOptions) (*APIServer,
 		Server:           server,
 		VersionInfo:      version.Get(),
 		APIServerOptions: o,
+	}
+
+	var err error
+
+	if apiServer.Storage, err = persistence.New(o.DatabaseOptions); err != nil {
+		return nil, fmt.Errorf("unable to initialize storage: %v", err)
 	}
 
 	return apiServer, nil
@@ -101,7 +110,6 @@ func (s *APIServer) PreRun() error {
 		return fmt.Errorf("failed to build handler chain: %w", err)
 	}
 
-	//s.Server.Handler = filters.WithGlobalFilter(combinedHandler)
 	s.Server.Handler = combinedHandler
 
 	return nil
@@ -115,7 +123,7 @@ func (s *APIServer) Run(ctx context.Context) (err error) {
 		<-ctx.Done()
 		klog.V(0).Info("Server shutting down")
 		if err := s.Server.Shutdown(ctx); err != nil {
-			klog.Errorf("failed to shutdown server: %s", err)
+			klog.Errorf("failed to shutdown server: %v", err)
 		}
 	}()
 
