@@ -18,9 +18,13 @@
 package options
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"github.com/fsnotify/fsnotify"
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	"k8s.io/klog/v2"
 	"peta.io/peta/pkg/utils/splitutils"
 	"regexp"
 	"strings"
@@ -32,6 +36,15 @@ type Config struct {
 	name     string
 	path     string
 	options  *APIServerOptions
+}
+
+func MergeConfig(fs *pflag.FlagSet, o *APIServerOptions) (*APIServerOptions, error) {
+	c, err := LoadConfig(o.ConfigFile)
+	if err != nil {
+		klog.Fatalf("failed to load config from disk: %v", err)
+	}
+	o.Merge(fs, c)
+	return o, errors.Join(o.Validate()...)
 }
 
 // LoadConfig load config file.
@@ -63,9 +76,15 @@ func LoadConfig(path string) (*APIServerOptions, error) {
 	return c.loadFromDisk()
 }
 
-func WatchConfig() {
+func WatchConfig(ctx context.Context, cancelFunc context.CancelFunc, runFn func(ctx context.Context, o *APIServerOptions) error, o *APIServerOptions) {
 	viper.OnConfigChange(func(e fsnotify.Event) {
 		fmt.Println("Config file changed:", e.Name)
+		fmt.Println("shutting down...")
+		cancelFunc()
+		err := runFn(ctx, o)
+		if err != nil {
+			klog.Fatal(err)
+		}
 	})
 	viper.WatchConfig()
 }

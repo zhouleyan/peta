@@ -87,6 +87,12 @@ func (s *APIServerOptions) Flags() *NamedFlagSets {
 	return nfs
 }
 
+func (s *APIServerOptions) AddFlags(nfs *NamedFlagSets) {
+	s.AuditingOptions.AddFlags(nfs.Insert("auditing", 1))
+	s.MetricsOptions.AddFlags(nfs.Insert("metrics", 1))
+	s.DatabaseOptions.AddFlags(nfs.Insert("database", 1))
+}
+
 type ServerRunOptions struct {
 	// server bind address
 	BindAddress string `json:"bindAddress,omitempty" yaml:"bindAddress,omitempty" mapstructure:"bindAddress"`

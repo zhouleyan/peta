@@ -112,15 +112,15 @@ func PrintSections(w io.Writer, fss *NamedFlagSets, cols int) {
 
 // SetUsageAndHelpFunc set both usage and help function.
 // Print the flag sets we need instead of all of them.
-func SetUsageAndHelpFunc(cmd *cobra.Command, fss *NamedFlagSets) {
+func SetUsageAndHelpFunc(cmd *cobra.Command, nfs *NamedFlagSets) {
 	cols, _, _ := term.Size(cmd.OutOrStdout())
 	cmd.SetUsageFunc(func(cmd *cobra.Command) error {
 		_, _ = fmt.Fprintf(cmd.OutOrStderr(), usageFmt, cmd.UseLine())
-		PrintSections(cmd.OutOrStderr(), fss, cols)
+		PrintSections(cmd.OutOrStderr(), nfs, cols)
 		return nil
 	})
 	cmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
 		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s\n\n"+usageFmt, cmd.Long, cmd.UseLine())
-		PrintSections(cmd.OutOrStdout(), fss, cols)
+		PrintSections(cmd.OutOrStdout(), nfs, cols)
 	})
 }
