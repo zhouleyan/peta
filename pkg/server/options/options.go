@@ -32,7 +32,7 @@ import (
 
 const (
 	defaultConfigName = "peta"
-	defaultConfigPath = "/etc/default/peta"
+	defaultConfigPath = "/etc/default/peta.yml"
 
 	envPrefix = "PETA"
 
