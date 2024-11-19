@@ -78,6 +78,7 @@ func MergeConfig(fs *pflag.FlagSet, o *options.APIServerOptions) (*options.APISe
 	if err != nil {
 		klog.Fatalf("failed to load config from disk: %v", err)
 	}
+	options.WatchConfig()
 	o.Merge(fs, c)
 	return o, errors.Join(o.Validate()...)
 }

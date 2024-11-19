@@ -18,6 +18,8 @@
 package options
 
 import (
+	"fmt"
+	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
 	"peta.io/peta/pkg/utils/splitutils"
 	"regexp"
@@ -59,6 +61,13 @@ func LoadConfig(path string) (*APIServerOptions, error) {
 
 	// 2.load from disk.
 	return c.loadFromDisk()
+}
+
+func WatchConfig() {
+	viper.OnConfigChange(func(e fsnotify.Event) {
+		fmt.Println("Config file changed:", e.Name)
+	})
+	viper.WatchConfig()
 }
 
 func resolvePath(p string) (name, path string) {

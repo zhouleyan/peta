@@ -81,9 +81,11 @@ func New(ctx context.Context, options *Options) (Storage, error) {
 
 	p := &persister{Conn: conn, initialPing: defaultInitialPing}
 
-	klog.Infof("")
-	if err := p.PingContext(ctx); err != nil {
-		return nil, err
+	if options.Init {
+		klog.Infof("Database %s %s %s connecting...", p.Conn.Dialect.Name(), connectionDetails.Database, connectionDetails.Host)
+		if err := p.PingContext(ctx); err != nil {
+			return nil, err
+		}
 	}
 
 	return p, nil

@@ -46,6 +46,8 @@ type Options struct {
 	//
 	// Schema: `dialect://username:password@host:port/database`
 	URL string `json:"url" yaml:"url" mapstructure:"url" jsonSchema:"example=postgres://peta:peta@localhost:5432/peta"`
+	// `init` is used to determine whether to initialize the database, default is true
+	Init bool `json:"init" yaml:"init" mapstructure:"init"`
 }
 
 func NewOptions() *Options {
@@ -57,6 +59,7 @@ func NewOptions() *Options {
 		User:     "peta",
 		Password: "peta",
 		URL:      fmt.Sprintf("postgres://peta:peta@localhost:5432/peta"),
+		Init:     true,
 	}
 }
 
@@ -86,6 +89,7 @@ func (o *Options) Merge(fs *pflag.FlagSet, conf *Options) {
 	if conf.Password != "" {
 		o.Password = conf.Password
 	}
+	o.Init = conf.Init
 }
 
 func (o *Options) Validate() []error {
