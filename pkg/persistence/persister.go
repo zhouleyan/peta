@@ -18,8 +18,15 @@
 package persistence
 
 import (
+	"context"
 	"embed"
+	"github.com/emicklei/go-restful/v3"
 	"github.com/gobuffalo/pop/v6"
+	"github.com/pkg/errors"
+	"k8s.io/klog/v2"
+	"peta.io/peta/pkg/apis/healthz"
+	"peta.io/peta/pkg/utils/osutils"
+	"peta.io/peta/pkg/utils/resilience"
 	"strconv"
 	"time"
 )
@@ -29,15 +36,26 @@ var migrations embed.FS
 
 var _ Storage = &persister{}
 
-// persister is the Persister interface connecting to the database and capable of doing migrations.
-type persister struct {
-	Conn *pop.Connection
+// defaultInitialPing is the default function that will be called within Storage to make sure
+// the database is reachable. It can be injected for test purposes by changing the value
+var defaultInitialPing = func(p *persister) error {
+	if err := resilience.Retry(5*time.Second, 1*time.Minute, p.Ping); err != nil {
+		klog.Errorf("could not ping database: %v", err)
+		return errors.WithStack(err)
+	}
+	return nil
 }
 
-func New(options *Options) (Storage, error) {
+// persister is the Persister interface connecting to the database and capable of doing migrations.
+type persister struct {
+	Conn        *pop.Connection
+	initialPing func(r *persister) error
+}
+
+func New(ctx context.Context, options *Options) (Storage, error) {
 	connectionDetails := &pop.ConnectionDetails{
-		Pool:            5,
-		IdlePool:        0,
+		Pool:            osutils.MaxParallelism() * 2,
+		IdlePool:        osutils.MaxParallelism(),
 		ConnMaxIdleTime: 5 * time.Minute,
 		ConnMaxLifetime: 1 * time.Hour,
 	}
@@ -61,12 +79,20 @@ func New(options *Options) (Storage, error) {
 		return nil, err
 	}
 
-	return &persister{Conn: conn}, nil
+	p := &persister{Conn: conn, initialPing: defaultInitialPing}
+
+	klog.Infof("")
+	if err := p.PingContext(ctx); err != nil {
+		return nil, err
+	}
+
+	return p, nil
 }
 
 type Persister interface {
 	GetConnection() *pop.Connection
 	Transaction(fn func(tx *pop.Connection) error) error
+	Close() error
 }
 
 type Migrator interface {
@@ -77,6 +103,12 @@ type Migrator interface {
 type Storage interface {
 	Migrator
 	Persister
+	healthz.HealthChecker
+}
+
+type pinger interface {
+	Ping() error
+	PingContext(ctx context.Context) error
 }
 
 func (p *persister) GetConnection() *pop.Connection {
@@ -85,6 +117,14 @@ func (p *persister) GetConnection() *pop.Connection {
 
 func (p *persister) Transaction(fn func(tx *pop.Connection) error) error {
 	return p.Conn.Transaction(fn)
+}
+
+func (p *persister) Name() string {
+	return p.Conn.Dialect.Name() + "-checker"
+}
+
+func (p *persister) Check(_ *restful.Request) error {
+	return p.Ping()
 }
 
 // MigrateUp applies all pending up migrations to the Database
@@ -111,4 +151,16 @@ func (p *persister) MigrateDown(steps int) error {
 		return err
 	}
 	return nil
+}
+
+func (p *persister) Ping() error {
+	return p.Conn.Store.(pinger).Ping()
+}
+
+func (p *persister) Close() error {
+	return p.Conn.Close()
+}
+
+func (p *persister) PingContext(ctx context.Context) error {
+	return p.Conn.Store.(pinger).PingContext(ctx)
 }

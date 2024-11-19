@@ -10,6 +10,7 @@ require (
 	github.com/go-openapi/strfmt v0.23.0
 	github.com/go-openapi/validate v0.24.0
 	github.com/gobuffalo/pop/v6 v6.1.1
+	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/moby/term v0.5.0
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/profile v1.7.0
@@ -47,7 +48,6 @@ require (
 	github.com/gobuffalo/plush/v4 v4.1.18 // indirect
 	github.com/gobuffalo/tags/v3 v3.1.4 // indirect
 	github.com/gobuffalo/validate/v3 v3.3.3 // indirect
-	github.com/gofrs/uuid v4.3.1+incompatible // indirect
 	github.com/google/pprof v0.0.0-20211214055906-6f57359322fd // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/css v1.0.0 // indirect

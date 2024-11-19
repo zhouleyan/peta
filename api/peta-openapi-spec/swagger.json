@@ -29,6 +29,24 @@
         }
       }
     },
+    "/apis/iam.peta.io/v1alpha2/users": {
+      "get": {
+        "description": "list PETA users",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "Namespaced Resources"
+        ],
+        "summary": "list users",
+        "operationId": "users-list",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/apis/version.peta.io/version": {
       "get": {
         "produces": [

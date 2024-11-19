@@ -15,19 +15,38 @@
  *  along with PETA. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package apis
+package v1alpha2
 
-const (
-	StatusOK = "ok"
-
-	WorkspaceNone = ""
-
-	ClusterNone = ""
-
-	// TagNamespacedResources contains user ...
-	TagNamespacedResources = "Namespaced Resources"
-
-	TagNonResourceAPI = "NonResource APIs"
-
-	TagConfigurations = "Configurations"
+import (
+	"github.com/emicklei/go-restful/v3"
+	"github.com/gofrs/uuid"
+	"peta.io/peta/pkg/apis"
+	"peta.io/peta/pkg/persistence"
 )
+
+type handler struct {
+	Storage persistence.Storage
+}
+
+type User struct {
+	ID   uuid.UUID `db:"id" json:"id"`
+	name string
+}
+
+func NewHandler(s persistence.Storage) apis.Handler {
+	return &handler{Storage: s}
+}
+
+func NewFakeHandler() apis.Handler {
+	return &handler{}
+}
+
+func (h *handler) listUsers(request *restful.Request, response *restful.Response) {
+	user := User{}
+	err := h.Storage.GetConnection().Find(&user, "1")
+	if err != nil {
+		apis.HandleInternalError(response, request, err)
+		return
+	}
+	_ = response.WriteAsJson(map[string]string{"v": "ok"})
+}

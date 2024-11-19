@@ -15,19 +15,15 @@
  *  along with PETA. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package apis
+package osutils
 
-const (
-	StatusOK = "ok"
+import "runtime"
 
-	WorkspaceNone = ""
-
-	ClusterNone = ""
-
-	// TagNamespacedResources contains user ...
-	TagNamespacedResources = "Namespaced Resources"
-
-	TagNonResourceAPI = "NonResource APIs"
-
-	TagConfigurations = "Configurations"
-)
+func MaxParallelism() int {
+	maxProcesses := runtime.GOMAXPROCS(0)
+	numCPU := runtime.NumCPU()
+	if maxProcesses < numCPU {
+		return maxProcesses
+	}
+	return numCPU
+}

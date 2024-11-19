@@ -76,7 +76,7 @@ func Run(ctx context.Context, o *options.APIServerOptions) error {
 func MergeConfig(fs *pflag.FlagSet, o *options.APIServerOptions) (*options.APIServerOptions, error) {
 	c, err := options.LoadConfig(o.ConfigFile)
 	if err != nil {
-		klog.Fatal("Failed to load config from disk: %v", err)
+		klog.Fatalf("failed to load config from disk: %v", err)
 	}
 	o.Merge(fs, c)
 	return o, errors.Join(o.Validate()...)

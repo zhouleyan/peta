@@ -20,6 +20,7 @@ package options
 import (
 	"github.com/spf13/viper"
 	"peta.io/peta/pkg/utils/splitutils"
+	"regexp"
 	"strings"
 	"sync"
 )
@@ -33,7 +34,7 @@ type Config struct {
 
 // LoadConfig load config file.
 func LoadConfig(path string) (*APIServerOptions, error) {
-	name := splitutils.LastOfSlice(splitutils.SplitPath(path))
+	name, path := resolvePath(path)
 	if name == "" {
 		name = defaultConfigName
 	}
@@ -58,6 +59,20 @@ func LoadConfig(path string) (*APIServerOptions, error) {
 
 	// 2.load from disk.
 	return c.loadFromDisk()
+}
+
+func resolvePath(p string) (name, path string) {
+	re := regexp.MustCompile(`\..[a-zA-Z0-9_]+$`)
+	if re.MatchString(p) {
+		parts := splitutils.SplitPath(p)
+		name = splitutils.LastOfSlice(parts)
+		re = regexp.MustCompile(`^[^.]*`)
+		name = re.FindString(name)
+		path = "/" + strings.Join(parts[:len(parts)-1], "/")
+	} else {
+		path = strings.TrimSuffix(p, "/")
+	}
+	return name, path
 }
 
 func (c *Config) loadFromDisk() (*APIServerOptions, error) {

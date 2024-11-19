@@ -15,19 +15,25 @@
  *  along with PETA. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package apis
+package resilience
 
-const (
-	StatusOK = "ok"
-
-	WorkspaceNone = ""
-
-	ClusterNone = ""
-
-	// TagNamespacedResources contains user ...
-	TagNamespacedResources = "Namespaced Resources"
-
-	TagNonResourceAPI = "NonResource APIs"
-
-	TagConfigurations = "Configurations"
+import (
+	"fmt"
+	"testing"
+	"time"
 )
+
+func TestUTCTime(t *testing.T) {
+	t.Run("UTC time", func(t *testing.T) {
+		utcTime := time.Now().UTC()
+		fmt.Printf("当前的UTC时间是：%04d-%02d-%02dT%02d:%02d:%02dZ\n",
+			utcTime.Year(), utcTime.Month(), utcTime.Day(),
+			utcTime.Hour(), utcTime.Minute(), utcTime.Second())
+	})
+	t.Run("Local time", func(t *testing.T) {
+		utcTime := time.Now()
+		fmt.Printf("当前的Local时间是：%04d-%02d-%02dT%02d:%02d:%02dZ\n",
+			utcTime.Year(), utcTime.Month(), utcTime.Day(),
+			utcTime.Hour(), utcTime.Minute(), utcTime.Second())
+	})
+}

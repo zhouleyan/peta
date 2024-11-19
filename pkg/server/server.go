@@ -28,6 +28,7 @@ import (
 	"peta.io/peta/pkg/apis"
 	configv1alpha2 "peta.io/peta/pkg/apis/config/v1alpha2"
 	healthzhandler "peta.io/peta/pkg/apis/healthz"
+	iamv1alpha2 "peta.io/peta/pkg/apis/iam/v1alpha2"
 	versionhandler "peta.io/peta/pkg/apis/version"
 	"peta.io/peta/pkg/persistence"
 	urlruntime "peta.io/peta/pkg/runtime"
@@ -77,7 +78,7 @@ func NewAPIServer(ctx context.Context, o *options.APIServerOptions) (*APIServer,
 
 	var err error
 
-	if apiServer.Storage, err = persistence.New(o.DatabaseOptions); err != nil {
+	if apiServer.Storage, err = persistence.New(ctx, o.DatabaseOptions); err != nil {
 		return nil, fmt.Errorf("unable to initialize storage: %v", err)
 	}
 
@@ -121,7 +122,11 @@ func (s *APIServer) Run(ctx context.Context) (err error) {
 
 	go func() {
 		<-ctx.Done()
-		klog.V(0).Info("Server shutting down")
+		klog.V(0).Info("Database connections closing...")
+		if err := s.Storage.Close(); err != nil {
+			klog.Errorf("failed to close database connections: %v", err)
+		}
+		klog.V(0).Info("Server shutting down...")
 		if err := s.Server.Shutdown(ctx); err != nil {
 			klog.Errorf("failed to shutdown server: %v", err)
 		}
@@ -176,6 +181,7 @@ func (s *APIServer) installPETAAPIs() {
 	handlers := []apis.Handler{
 		versionhandler.NewHandler(s.VersionInfo),
 		configv1alpha2.NewHandler(s.APIServerOptions),
+		iamv1alpha2.NewHandler(s.Storage),
 	}
 
 	for _, handler := range handlers {
@@ -185,8 +191,13 @@ func (s *APIServer) installPETAAPIs() {
 
 func (s *APIServer) installHealthz() {
 	handler := healthzhandler.NewHandler(
+		// healthz
 		[]healthzhandler.HealthChecker{},
-		[]healthzhandler.HealthChecker{},
+		// livez
+		[]healthzhandler.HealthChecker{
+			s.Storage,
+		},
+		// readyz
 		[]healthzhandler.HealthChecker{},
 	)
 
