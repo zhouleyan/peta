@@ -3,7 +3,7 @@ server:
   insecurePort: 9090
 
 database:
-  database: peta2
+  database: peta1
   dialect: mysql
   host: 10.1.1.13
   port: 3306

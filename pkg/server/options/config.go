@@ -76,15 +76,10 @@ func LoadConfig(path string) (*APIServerOptions, error) {
 	return c.loadFromDisk()
 }
 
-func WatchConfig(ctx context.Context, cancelFunc context.CancelFunc, runFn func(ctx context.Context, o *APIServerOptions) error, o *APIServerOptions) {
+func WatchConfig(ctx context.Context, o *APIServerOptions) {
 	viper.OnConfigChange(func(e fsnotify.Event) {
-		fmt.Println("Config file changed:", e.Name)
-		fmt.Println("shutting down...")
-		cancelFunc()
-		err := runFn(ctx, o)
-		if err != nil {
-			klog.Fatal(err)
-		}
+		fmt.Printf("Config file changed: %s\n", e.Name)
+		//fmt.Println("shutting down...")
 	})
 	viper.WatchConfig()
 }

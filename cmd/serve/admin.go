@@ -38,8 +38,8 @@ func NewServerAdminCommand(o *options.APIServerOptions) *cobra.Command {
 		Long:  ``,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			o, err := options.MergeConfig(cmd.Flags(), o)
-			ctx, cancel := signals.SetupSignalHandler()
-			options.WatchConfig(ctx, cancel, Run, o)
+			ctx := signals.SetupSignalHandler()
+			options.WatchConfig(ctx, o)
 			if err != nil {
 				return fmt.Errorf("misconfiguration \n%v", err)
 			}
