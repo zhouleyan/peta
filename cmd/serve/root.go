@@ -42,5 +42,5 @@ func RegisterCommands(parent *cobra.Command) {
 	options.SetUsageAndHelpFunc(cmd, nfs)
 
 	parent.AddCommand(cmd)
-	cmd.AddCommand(NewServerAdminCommand(o))
+	cmd.AddCommand(NewServeAdminCommand(o))
 }

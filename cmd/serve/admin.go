@@ -28,7 +28,7 @@ import (
 	"peta.io/peta/pkg/signals"
 )
 
-func NewServerAdminCommand(o *options.APIServerOptions) *cobra.Command {
+func NewServeAdminCommand(o *options.APIServerOptions) *cobra.Command {
 	nfs := o.Flags()
 	o.AddFlags(nfs)
 
