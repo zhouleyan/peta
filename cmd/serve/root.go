@@ -43,4 +43,5 @@ func RegisterCommands(parent *cobra.Command) {
 
 	parent.AddCommand(cmd)
 	cmd.AddCommand(NewServeAdminCommand(o))
+	cmd.AddCommand(NewServePublicCommand(o))
 }

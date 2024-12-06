@@ -76,10 +76,12 @@ func LoadConfig(path string) (*APIServerOptions, error) {
 	return c.loadFromDisk()
 }
 
-func WatchConfig(ctx context.Context, o *APIServerOptions) {
+func WatchConfig(ctx context.Context, cancel context.CancelFunc, o *APIServerOptions) {
 	viper.OnConfigChange(func(e fsnotify.Event) {
 		fmt.Printf("Config file changed: %s\n", e.Name)
-		//fmt.Println("shutting down...")
+		// shutdown server
+		cancel()
+		fmt.Println("server shutting down...")
 	})
 	viper.WatchConfig()
 }

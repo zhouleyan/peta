@@ -19,33 +19,31 @@ package serve
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"github.com/spf13/cobra"
-	"net/http"
-	"peta.io/peta/pkg/server"
+	"github.com/spf13/pflag"
+	"log"
 	"peta.io/peta/pkg/server/options"
 	"peta.io/peta/pkg/signals"
+	"runtime"
 )
 
-func NewServeAdminCommand(o *options.APIServerOptions) *cobra.Command {
+func NewServePublicCommand(o *options.APIServerOptions) *cobra.Command {
 	nfs := o.Flags()
-	o.AddFlags(nfs)
 
 	cmd := &cobra.Command{
-		Use:   "admin",
-		Short: "Start the peta admin server.",
+		Use:   "public",
+		Short: "Start the peta public server.",
 		Long:  ``,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			o, err := options.MergeConfig(cmd.Flags(), o)
 			ctx := signals.SetupSignalHandler()
-			if err != nil {
-				return fmt.Errorf("misconfiguration \n%v", err)
-			}
-			return Run(ctx, o)
+
+			// `ctx` controls the entire program, cancel when get os termination signal
+			// `ctx => serverCtx` controls the server life-cycle, cancel when receive reload signal(config changed)
+			return RunPublic(ctx, cmd.Flags(), o)
 		},
 		SilenceUsage: true,
 	}
+
 	fs := cmd.Flags()
 	for _, f := range nfs.FlagSets {
 		fs.AddFlagSet(f)
@@ -55,20 +53,7 @@ func NewServeAdminCommand(o *options.APIServerOptions) *cobra.Command {
 	return cmd
 }
 
-func Run(ctx context.Context, o *options.APIServerOptions) error {
-
-	apiServer, err := server.NewAPIServer(ctx, o)
-	if err != nil {
-		return err
-	}
-
-	if err = apiServer.PreRun(); err != nil {
-		return err
-	}
-
-	if errors.Is(apiServer.Run(ctx), http.ErrServerClosed) {
-		return nil
-	}
-
-	return err
+func RunPublic(ctx context.Context, fs *pflag.FlagSet, o *options.APIServerOptions) error {
+	log.Println(runtime.NumGoroutine())
+	return nil
 }
