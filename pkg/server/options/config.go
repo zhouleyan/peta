@@ -18,10 +18,7 @@
 package options
 
 import (
-	"context"
 	"errors"
-	"fmt"
-	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"k8s.io/klog/v2"
@@ -74,16 +71,6 @@ func LoadConfig(path string) (*APIServerOptions, error) {
 
 	// 2.load from disk.
 	return c.loadFromDisk()
-}
-
-func WatchConfig(ctx context.Context, cancel context.CancelFunc, o *APIServerOptions) {
-	viper.OnConfigChange(func(e fsnotify.Event) {
-		fmt.Printf("Config file changed: %s\n", e.Name)
-		// shutdown server
-		cancel()
-		fmt.Println("server shutting down...")
-	})
-	viper.WatchConfig()
 }
 
 func resolvePath(p string) (name, path string) {

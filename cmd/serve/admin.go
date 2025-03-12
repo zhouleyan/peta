@@ -37,12 +37,12 @@ func NewServeAdminCommand(o *options.APIServerOptions) *cobra.Command {
 		Short: "Start the peta admin server.",
 		Long:  ``,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			o, err := options.MergeConfig(cmd.Flags(), o)
+			opts, err := options.MergeConfig(cmd.Flags(), o)
 			if err != nil {
 				return fmt.Errorf("misconfiguration \n%v", err)
 			}
 			ctx := signals.SetupSignalHandler()
-			return Run(ctx, o)
+			return Run(ctx, opts)
 		},
 		SilenceUsage: true,
 	}
