@@ -31,7 +31,7 @@ func New[T comparable](items ...T) Set[T] {
 }
 
 // KeySet creates a Set from keys of a map[comparable](? extends interface{}).
-// If the value passed in is not actually a map, this will panic.
+// If the value passed in is not a map, this will panic.
 func KeySet[T comparable, V any](theMap map[T]V) Set[T] {
 	ret := Set[T]{}
 	for keyValue := range theMap {
@@ -60,13 +60,13 @@ func (s Set[T]) Delete(items ...T) Set[T] {
 	return s
 }
 
-// Clear empties the set.
+// Clear clearly empties the set.
 // It is preferable to replace the set with a newly constructed set.
-// but not all callers can do that (when there are other references to the map).
-// In some cases the set *won't* be fully cleared, e.g. a Set[float32] containing NaN
+// But not all callers can do that (when there are other references to the map).
+// In some cases, the set *won't* be fully cleared, e.g., a Set[float32] containing NaN
 // can't be cleared because NaN can't be removed.
 // For sets containing items of a type that is reflexive for ==,
-// this is optimized to a single call to runtime.mapclear().
+// this is optimized to a single call to runtime.map clear().
 func (s Set[T]) Clear() Set[T] {
 	for key := range s {
 		delete(s, key)
@@ -100,7 +100,7 @@ func (s Set[T]) HasAny(items ...T) bool {
 	return false
 }
 
-// Clone returns a new set which is a copy of the current set.
+// Clone returns a new set, which is a copy of the current set.
 func (s Set[T]) Clone() Set[T] {
 	result := make(Set[T], len(s))
 	for key := range s {
