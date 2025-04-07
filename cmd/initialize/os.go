@@ -1,6 +1,6 @@
 /*
  *  This file is part of PETA.
- *  Copyright (C) 2024 The PETA Authors.
+ *  Copyright (C) 2025 The PETA Authors.
  *  PETA is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
@@ -15,38 +15,52 @@
  *  along with PETA. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package cmd
+package initialize
 
 import (
+	"fmt"
 	"github.com/spf13/cobra"
-	"os"
-	"peta.io/peta/cmd/initialize"
-	"peta.io/peta/cmd/serve"
-	"peta.io/peta/cmd/version"
+	"peta.io/peta/pkg/clients/ssh"
 )
 
-// NewPetaCommand creates a new peta root command.
-func NewPetaCommand() *cobra.Command {
+func NewInitOSCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "peta",
-		Short: "Run and manage PETA",
-		Long:  "Run and manage PETA...",
+		Use:   "os",
+		Short: "Start the peta admin server.",
+		Long:  ``,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return Run()
+		},
+		SilenceUsage: true,
 	}
-	RegisterCommandRecursive(cmd)
 
 	return cmd
 }
 
-func RegisterCommandRecursive(cmd *cobra.Command) {
+func Run() error {
 
-	initialize.RegisterCommands(cmd)
-	serve.RegisterCommands(cmd)
-	version.RegisterCommands(cmd)
-}
-
-// Execute adds all child commands to the root command sets flags appropriately.
-func Execute() {
-	if err := NewPetaCommand().Execute(); err != nil {
-		os.Exit(1)
+	client, err := ssh.New(
+		"root",
+		"10.1.1.21",
+		22,
+		"123456",
+		"/Users/zhouleyan/.ssh/id_ed25519",
+		"",
+		"",
+		0,
+		true,
+		true,
+	)
+	if err != nil {
+		return err
 	}
+
+	output, err := client.Run("ip a")
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(string(output))
+
+	return nil
 }
