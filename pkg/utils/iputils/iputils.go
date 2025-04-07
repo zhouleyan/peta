@@ -20,6 +20,7 @@ package iputils
 import (
 	"net"
 	"net/http"
+	"regexp"
 )
 
 const (
@@ -27,6 +28,19 @@ const (
 	XRealIP       = "X-Real-IP"
 	XClientIP     = "x-client-ip"
 )
+
+// IsValidIP determine whether the string is a valid IP address.
+func IsValidIP(ip string) bool {
+	return net.ParseIP(ip) != nil
+}
+
+// IsValidDomain determine whether the string is a valid domain.
+func IsValidDomain(domain string) bool {
+	re := regexp.MustCompile(
+		`^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?$`,
+	)
+	return re.MatchString(domain)
+}
 
 func RemoteIP(req *http.Request) string {
 	remoteAddr := req.RemoteAddr
