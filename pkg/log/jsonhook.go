@@ -20,26 +20,54 @@ package log
 import (
 	"github.com/sirupsen/logrus"
 	"io"
+	"os"
+	"peta.io/peta/pkg/utils/queue"
 )
+
+func NewJSONHook(logFile string) *JSONHook {
+	w, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		panic(err)
+	}
+	jsonFormatter := &JSONFormatter{
+		PrettyPrint: false,
+	}
+
+	q := queue.NewQueue(10, 100)
+	q.Run()
+
+	return &JSONHook{
+		Writer:    w,
+		Formatter: jsonFormatter,
+		q:         q,
+	}
+}
 
 // JSONHook writes logs as JSON and save to files
 type JSONHook struct {
 	Writer    io.Writer
 	Formatter logrus.Formatter
+	q         queue.Queue
 }
 
-func (J *JSONHook) Levels() []logrus.Level {
+func (j *JSONHook) Levels() []logrus.Level {
 	return logrus.AllLevels
 }
 
-func (J *JSONHook) Fire(entry *logrus.Entry) error {
+func (j *JSONHook) Fire(entry *logrus.Entry) error {
 	clone := *entry
-	formatted, err := J.Formatter.Format(&clone)
+	formatted, err := j.Formatter.Format(&clone)
 	if err != nil {
 		return err
 	}
 
 	// writes to files
-	_, err = J.Writer.Write(formatted)
+	j.q.Push(queue.NewJob(formatted, func(v interface{}) {
+		_, err = j.Writer.Write(v.([]byte))
+	}))
 	return err
+}
+
+func (j *JSONHook) Flush() {
+	j.q.Terminate()
 }

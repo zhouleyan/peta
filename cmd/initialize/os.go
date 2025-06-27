@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"peta.io/peta/pkg/clients/ssh"
+	"peta.io/peta/pkg/log"
 )
 
 func NewInitOSCommand() *cobra.Command {
@@ -39,12 +40,14 @@ func NewInitOSCommand() *cobra.Command {
 
 func Run() error {
 
+	// private key for root: "/Users/zhouleyan/.ssh/id_ed25519"
+	// "zly2104718987" for "zhouleyan"
 	client, err := ssh.New(
 		"root",
-		"10.1.1.21",
+		"10.1.1.31",
 		22,
 		"123456",
-		"/Users/zhouleyan/.ssh/id_ed25519",
+		"",
 		"",
 		"",
 		0,
@@ -56,10 +59,11 @@ func Run() error {
 	}
 
 	output, err := client.Run("ip a")
+
 	if err != nil {
+		log.Errorf(string(output))
 		return err
 	}
-
 	fmt.Println(string(output))
 
 	return nil

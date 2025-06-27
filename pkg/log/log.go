@@ -27,6 +27,7 @@ var log Log
 
 type Log struct {
 	logrus.FieldLogger
+	Flush func()
 }
 
 func init() {
@@ -45,23 +46,14 @@ func init() {
 		MaximumCallerDepth: 25,
 	})
 
-	logger.SetOutput(os.Stdout)
+	logger.SetOutput(os.Stderr)
 
-	jsonFormatter := &logrus.JSONFormatter{
-		PrettyPrint: false,
-	}
+	jsonHook := NewJSONHook("peta.log")
 
-	logFile, err := os.OpenFile("peta.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err != nil {
-		panic(err)
-	}
-
-	logger.AddHook(&JSONHook{
-		Writer:    logFile,
-		Formatter: jsonFormatter,
-	})
+	logger.AddHook(jsonHook)
 
 	log.FieldLogger = logger
+	log.Flush = jsonHook.Flush
 }
 
 func Infof(format string, args ...interface{}) {
@@ -70,4 +62,8 @@ func Infof(format string, args ...interface{}) {
 
 func Errorf(format string, args ...interface{}) {
 	log.Errorf(format, args...)
+}
+
+func Flush() {
+	log.Flush()
 }

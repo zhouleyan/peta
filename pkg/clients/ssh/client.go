@@ -21,7 +21,9 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
+	"io"
 	"net"
+	"peta.io/peta/pkg/log"
 	"peta.io/peta/pkg/utils/iputils"
 	"strings"
 	"sync"
@@ -98,7 +100,7 @@ func Dial(proto string, c *Config) (*ssh.Client, error) {
 	})
 }
 
-func (c *Client) Run(cmd string) (stdout []byte, err error) {
+func (c *Client) session() (*ssh.Session, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -111,12 +113,46 @@ func (c *Client) Run(cmd string) (stdout []byte, err error) {
 		return nil, err
 	}
 
+	modes := ssh.TerminalModes{
+		ssh.ECHO:          1,
+		ssh.TTY_OP_ISPEED: 14400,
+		ssh.TTY_OP_OSPEED: 14400,
+	}
+
+	err = session.RequestPty("xterm", 100, 50, modes)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := session.Setenv("LANG", "en_US.UTF-8"); err != nil {
+		log.Infof("failed to set LANG to en_US.UTF-8. (Error: %v)", err)
+		log.Errorf("failed to set LANG to en_US.UTF-8. (Error: %v)", err)
+	}
+
+	return session, nil
+}
+
+func (c *Client) Run(cmd string) (stdout []byte, err error) {
+	session, err := c.session()
+	if err != nil {
+		return nil, err
+	}
 	defer func(session *ssh.Session) {
 		dErr := session.Close()
-		if err != nil {
+		if dErr != nil && dErr != io.EOF && err == nil {
 			err = dErr
 		}
 	}(session)
+
+	//err = session.Start(strings.TrimSpace(cmd))
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//err = session.Wait()
+	//if err != nil {
+	//	fmt.Println(err)
+	//}
 
 	return session.CombinedOutput(strings.TrimSpace(cmd))
 }

@@ -129,7 +129,7 @@ func AddKnownHost(host string, remote net.Addr, key ssh.PublicKey, knownFile str
 	}
 	defer func(f *os.File) {
 		dErr := f.Close()
-		if dErr != nil {
+		if dErr != nil && err == nil {
 			err = dErr
 		}
 	}(f)

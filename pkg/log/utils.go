@@ -1,6 +1,6 @@
 /*
  *  This file is part of PETA.
- *  Copyright (C) 2024 The PETA Authors.
+ *  Copyright (C) 2025 The PETA Authors.
  *  PETA is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
@@ -15,18 +15,4 @@
  *  along with PETA. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package main
-
-import (
-	"peta.io/peta/cmd"
-	"peta.io/peta/pkg/log"
-	"peta.io/peta/pkg/profile"
-)
-
-func main() {
-	defer profile.Profile().Stop()
-
-	cmd.Execute()
-
-	log.Flush()
-}
+package log
