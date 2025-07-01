@@ -18,16 +18,14 @@
 package options
 
 import (
-	"flag"
 	"fmt"
 	"github.com/spf13/pflag"
-	"k8s.io/klog/v2"
 	"os"
+	"peta.io/peta/pkg/log"
 	"peta.io/peta/pkg/persistence"
 	"peta.io/peta/pkg/server/auditing"
 	"peta.io/peta/pkg/server/metrics"
 	"peta.io/peta/pkg/utils/iputils"
-	"strings"
 )
 
 const (
@@ -47,6 +45,7 @@ type APIServerOptions struct {
 	ConfigFile        string
 	DebugMode         bool
 	*ServerRunOptions `json:"server,omitempty" yaml:"server,omitempty" mapstructure:"server"`
+	LogOptions        *log.Options         `json:"log,omitempty" yaml:"log,omitempty" mapstructure:"log"`
 	AuditingOptions   *auditing.Options    `json:"auditing,omitempty" yaml:"auditing,omitempty" mapstructure:"auditing"`
 	MetricsOptions    *metrics.Options     `json:"metrics,omitempty" yaml:"metrics,omitempty" mapstructure:"metrics"`
 	DatabaseOptions   *persistence.Options `json:"database,omitempty" yaml:"database,omitempty" mapstructure:"database"`
@@ -55,6 +54,7 @@ type APIServerOptions struct {
 func NewAPIServerOptions() *APIServerOptions {
 	o := &APIServerOptions{
 		ServerRunOptions: NewServerRunOptions(),
+		LogOptions:       log.NewOptions(),
 		AuditingOptions:  auditing.NewOptions(),
 		MetricsOptions:   metrics.NewOptions(),
 		DatabaseOptions:  persistence.NewOptions(),
@@ -76,13 +76,8 @@ func (s *APIServerOptions) Flags() *NamedFlagSets {
 	fs.StringVar(&s.ConfigFile, "config", defaultConfigPath, "config file path")
 	s.ServerRunOptions.AddFlags(fs)
 
-	fs = nfs.FlagSet("klog")
-	local := flag.NewFlagSet("local", flag.ExitOnError)
-	klog.InitFlags(local)
-	local.VisitAll(func(fl *flag.Flag) {
-		fl.Name = strings.Replace(fl.Name, "_", "-", -1)
-		fs.AddGoFlag(fl)
-	})
+	fs = nfs.FlagSet("log")
+	s.LogOptions.AddFlags(fs)
 
 	return nfs
 }

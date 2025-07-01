@@ -41,5 +41,5 @@ func RegisterCommands(parent *cobra.Command) {
 	options.SetUsageAndHelpFunc(cmd, nfs)
 
 	parent.AddCommand(cmd)
-	cmd.AddCommand(NewInitOSCommand())
+	cmd.AddCommand(NewInitOSCommand(o))
 }

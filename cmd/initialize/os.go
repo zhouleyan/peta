@@ -22,14 +22,17 @@ import (
 	"github.com/spf13/cobra"
 	"peta.io/peta/pkg/clients/ssh"
 	"peta.io/peta/pkg/log"
+	"peta.io/peta/pkg/server/options"
 )
 
-func NewInitOSCommand() *cobra.Command {
+func NewInitOSCommand(o *options.APIServerOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "os",
 		Short: "Start the peta admin server.",
 		Long:  ``,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			log.Setup(o.LogOptions)
+			defer log.Flush()
 			return Run()
 		},
 		SilenceUsage: true,

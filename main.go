@@ -19,7 +19,6 @@ package main
 
 import (
 	"peta.io/peta/cmd"
-	"peta.io/peta/pkg/log"
 	"peta.io/peta/pkg/profile"
 )
 
@@ -27,6 +26,4 @@ func main() {
 	defer profile.Profile().Stop()
 
 	cmd.Execute()
-
-	log.Flush()
 }

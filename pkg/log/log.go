@@ -19,6 +19,7 @@ package log
 
 import (
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/pflag"
 	"os"
 	"time"
 )
@@ -27,15 +28,44 @@ var log Log
 
 type Log struct {
 	logrus.FieldLogger
+	*Options
+
 	Flush func()
 }
 
-func init() {
-	logger := logrus.New()
-	formatter := &logrus.TextFormatter{
+type Options struct {
+	Verbosity bool
+
+	// TextFormatter
+	FullTimestamp   bool   // default true
+	ForceColors     bool   // default true
+	TimestampFormat string // default time.DateTime
+
+	// JSONFormatter
+	LogFile     string // default "peta.log"
+	PrettyPrint bool   //default false
+}
+
+func NewOptions() *Options {
+	return &Options{
+		Verbosity:       false,
 		FullTimestamp:   true,
 		ForceColors:     true,
 		TimestampFormat: time.DateTime,
+		LogFile:         "peta.log",
+		PrettyPrint:     false,
+	}
+}
+
+func Setup(o *Options) {
+	logger := logrus.New()
+	if o.Verbosity {
+		logger.Level = logrus.TraceLevel
+	}
+	formatter := &logrus.TextFormatter{
+		FullTimestamp:   o.FullTimestamp,
+		ForceColors:     o.ForceColors,
+		TimestampFormat: o.TimestampFormat,
 	}
 
 	logger.SetFormatter(formatter)
@@ -48,16 +78,33 @@ func init() {
 
 	logger.SetOutput(os.Stderr)
 
-	jsonHook := NewJSONHook("peta.log")
+	jsonHook := NewJSONHook(o.LogFile, o.PrettyPrint)
 
 	logger.AddHook(jsonHook)
 
+	log.Options = o
 	log.FieldLogger = logger
 	log.Flush = jsonHook.Flush
 }
 
+func Infoln(args ...interface{}) {
+	log.Infoln(args...)
+}
+
 func Infof(format string, args ...interface{}) {
 	log.Infof(format, args...)
+}
+
+func Warnln(args ...interface{}) {
+	log.Warnln(args...)
+}
+
+func Warnf(format string, args ...interface{}) {
+	log.Warnf(format, args...)
+}
+
+func Errorln(args ...interface{}) {
+	log.Errorln(args...)
 }
 
 func Errorf(format string, args ...interface{}) {
@@ -66,4 +113,14 @@ func Errorf(format string, args ...interface{}) {
 
 func Flush() {
 	log.Flush()
+}
+
+func (o *Options) AddFlags(fs *pflag.FlagSet) {
+	fs.BoolVar(&o.Verbosity, "v", o.Verbosity, "If true, allows Debug() and Trace() to be logged")
+	fs.BoolVar(&o.Verbosity, "verbosity", o.Verbosity, "If true, allows Debug() and Trace() to be logged")
+	fs.BoolVar(&o.FullTimestamp, "full-timestamp", o.FullTimestamp, "If true, enable logging the full timestamp")
+	fs.BoolVar(&o.ForceColors, "force-colors", o.ForceColors, "If true, set to true to bypass checking for a TTY before outputting colors")
+	fs.StringVar(&o.TimestampFormat, "timestamp-format", o.TimestampFormat, "to use for display when a full timestamp is printed")
+	fs.StringVar(&o.LogFile, "log-file", o.LogFile, "If non-empty, write log files in this directory")
+	fs.BoolVar(&o.PrettyPrint, "pretty-print", o.PrettyPrint, "If true, will indent all JSON logs")
 }

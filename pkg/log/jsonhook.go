@@ -18,26 +18,34 @@
 package log
 
 import (
+	"github.com/natefinch/lumberjack"
 	"github.com/sirupsen/logrus"
 	"io"
-	"os"
 	"peta.io/peta/pkg/utils/queue"
 )
 
-func NewJSONHook(logFile string) *JSONHook {
-	w, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err != nil {
-		panic(err)
+func NewJSONHook(logFile string, prettyPrint bool) *JSONHook {
+	l := &lumberjack.Logger{
+		Filename: logFile,
+		// 10MB
+		MaxSize: 10,
+		// 28 days
+		MaxAge: 28,
+		// Maximum number of backup files retained
+		MaxBackups: 3,
+		LocalTime:  true,
+		Compress:   true,
 	}
+
 	jsonFormatter := &JSONFormatter{
-		PrettyPrint: false,
+		PrettyPrint: prettyPrint,
 	}
 
 	q := queue.NewQueue(10, 100)
 	q.Run()
 
 	return &JSONHook{
-		Writer:    w,
+		Writer:    l,
 		Formatter: jsonFormatter,
 		q:         q,
 	}
