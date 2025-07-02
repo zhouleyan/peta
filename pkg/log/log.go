@@ -18,17 +18,22 @@
 package log
 
 import (
+	"flag"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/pflag"
 	"os"
+	"sync"
 	"time"
 )
 
 var log Log
 
+var commandLine flag.FlagSet
+
 type Log struct {
 	logrus.FieldLogger
-	*Options
+	Options
+
+	mu sync.Mutex
 
 	Flush func()
 }
@@ -44,20 +49,13 @@ type Options struct {
 	// JSONFormatter
 	LogFile     string // default "peta.log"
 	PrettyPrint bool   //default false
+
+	// Log File Rotate
+	MaxSize, MaxAge, MaxBackups uint
 }
 
-func NewOptions() *Options {
-	return &Options{
-		Verbosity:       false,
-		FullTimestamp:   true,
-		ForceColors:     true,
-		TimestampFormat: time.DateTime,
-		LogFile:         "peta.log",
-		PrettyPrint:     false,
-	}
-}
-
-func Setup(o *Options) {
+func Setup() {
+	o := &log.Options
 	logger := logrus.New()
 	if o.Verbosity {
 		logger.Level = logrus.TraceLevel
@@ -78,13 +76,25 @@ func Setup(o *Options) {
 
 	logger.SetOutput(os.Stderr)
 
-	jsonHook := NewJSONHook(o.LogFile, o.PrettyPrint)
+	jsonHook := NewJSONHook(o.LogFile, o.PrettyPrint, o.MaxSize, o.MaxAge, o.MaxBackups)
 
 	logger.AddHook(jsonHook)
 
-	log.Options = o
 	log.FieldLogger = logger
 	log.Flush = jsonHook.Flush
+}
+
+func init() {
+	commandLine.BoolVar(&log.Verbosity, "v", false, "If true, allows Debug() and Trace() to be logged")
+	commandLine.BoolVar(&log.Verbosity, "verbosity", false, "If true, allows Debug() and Trace() to be logged")
+	commandLine.BoolVar(&log.FullTimestamp, "full-timestamp", true, "If true, enable logging the full timestamp")
+	commandLine.BoolVar(&log.ForceColors, "force-colors", true, "If true, set to true to bypass checking for a TTY before outputting colors")
+	commandLine.StringVar(&log.TimestampFormat, "timestamp-format", time.DateTime, "to use for display when a full timestamp is printed")
+	commandLine.StringVar(&log.LogFile, "log-file", "peta.log", "If non-empty, write log files in this directory")
+	commandLine.BoolVar(&log.PrettyPrint, "pretty-print", false, "If true, will indent all JSON logs")
+	commandLine.UintVar(&log.MaxSize, "log-file-size", 10, "the size of the log file before rotating(MB)")
+	commandLine.UintVar(&log.MaxAge, "log-age", 28, "the age of the log file before rotating")
+	commandLine.UintVar(&log.MaxBackups, "log-backups", 3, "the number of log files to keep")
 }
 
 func Infoln(args ...interface{}) {
@@ -112,15 +122,18 @@ func Errorf(format string, args ...interface{}) {
 }
 
 func Flush() {
+	log.mu.Lock()
+	defer log.mu.Unlock()
 	log.Flush()
 }
 
-func (o *Options) AddFlags(fs *pflag.FlagSet) {
-	fs.BoolVar(&o.Verbosity, "v", o.Verbosity, "If true, allows Debug() and Trace() to be logged")
-	fs.BoolVar(&o.Verbosity, "verbosity", o.Verbosity, "If true, allows Debug() and Trace() to be logged")
-	fs.BoolVar(&o.FullTimestamp, "full-timestamp", o.FullTimestamp, "If true, enable logging the full timestamp")
-	fs.BoolVar(&o.ForceColors, "force-colors", o.ForceColors, "If true, set to true to bypass checking for a TTY before outputting colors")
-	fs.StringVar(&o.TimestampFormat, "timestamp-format", o.TimestampFormat, "to use for display when a full timestamp is printed")
-	fs.StringVar(&o.LogFile, "log-file", o.LogFile, "If non-empty, write log files in this directory")
-	fs.BoolVar(&o.PrettyPrint, "pretty-print", o.PrettyPrint, "If true, will indent all JSON logs")
+// InitFlags is for explicitly initializing the flags.
+func InitFlags(fs *flag.FlagSet) {
+	if fs == nil {
+		fs = flag.CommandLine
+	}
+
+	commandLine.VisitAll(func(f *flag.Flag) {
+		fs.Var(f.Value, f.Name, f.Usage)
+	})
 }

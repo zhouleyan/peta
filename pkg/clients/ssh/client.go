@@ -124,6 +124,9 @@ func (c *Client) session() (*ssh.Session, error) {
 		return nil, err
 	}
 
+	log.Infof("failed to set LANG to en_US.UTF-8. (Error: %v)", err)
+	log.Errorf("failed to set LANG to en_US.UTF-8. (Error: %v)", errors.Errorf("123455"))
+
 	if err := session.Setenv("LANG", "en_US.UTF-8"); err != nil {
 		log.Infof("failed to set LANG to en_US.UTF-8. (Error: %v)", err)
 		log.Errorf("failed to set LANG to en_US.UTF-8. (Error: %v)", err)

@@ -31,8 +31,6 @@ func NewInitOSCommand(o *options.APIServerOptions) *cobra.Command {
 		Short: "Start the peta admin server.",
 		Long:  ``,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			log.Setup(o.LogOptions)
-			defer log.Flush()
 			return Run()
 		},
 		SilenceUsage: true,
@@ -47,7 +45,7 @@ func Run() error {
 	// "zly2104718987" for "zhouleyan"
 	client, err := ssh.New(
 		"root",
-		"10.1.1.31",
+		"10.1.1.111",
 		22,
 		"123456",
 		"",

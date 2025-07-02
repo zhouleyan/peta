@@ -23,6 +23,7 @@ import (
 	"peta.io/peta/cmd/initialize"
 	"peta.io/peta/cmd/serve"
 	"peta.io/peta/cmd/version"
+	"peta.io/peta/pkg/log"
 )
 
 // NewPetaCommand creates a new peta root command.
@@ -31,6 +32,12 @@ func NewPetaCommand() *cobra.Command {
 		Use:   "peta",
 		Short: "Run and manage PETA",
 		Long:  "Run and manage PETA...",
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			log.Setup()
+		},
+		PersistentPostRun: func(cmd *cobra.Command, args []string) {
+			log.Flush()
+		},
 	}
 	RegisterCommandRecursive(cmd)
 

@@ -24,7 +24,7 @@ import (
 	"peta.io/peta/pkg/utils/queue"
 )
 
-func NewJSONHook(logFile string, prettyPrint bool) *JSONHook {
+func NewJSONHook(logFile string, prettyPrint bool, MaxSize, MaxAge, MaxBackups uint) *JSONHook {
 	l := &lumberjack.Logger{
 		Filename: logFile,
 		// 10MB
