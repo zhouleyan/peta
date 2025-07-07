@@ -121,6 +121,22 @@ func Errorf(format string, args ...interface{}) {
 	log.Errorf(format, args...)
 }
 
+func Fatalln(args ...interface{}) {
+	log.Fatalln(args...)
+}
+
+func Fatalf(format string, args ...interface{}) {
+	log.Fatalf(format, args...)
+}
+
+func Debugln(args ...interface{}) {
+	log.Debugln(args...)
+}
+
+func Debugf(format string, args ...interface{}) {
+	log.Debugf(format, args...)
+}
+
 func Flush() {
 	log.mu.Lock()
 	defer log.mu.Unlock()

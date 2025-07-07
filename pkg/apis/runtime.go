@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"github.com/emicklei/go-restful/v3"
 	"github.com/pkg/errors"
-	"k8s.io/klog/v2"
 	"net/http"
+	"peta.io/peta/pkg/log"
 	"runtime"
 	"strings"
 	"sync"
@@ -120,7 +120,7 @@ func HandleRestError(response *restful.Response, req *restful.Request, err error
 
 func handle(statusCode int, response *restful.Response, req *restful.Request, err error) {
 	_, fn, line, _ := runtime.Caller(2)
-	klog.Errorf("%s:%d %v", fn, line, err)
+	log.Errorf("%s:%d %v", fn, line, err)
 	http.Error(response, sanitizer.Replace(err.Error()), statusCode)
 }
 
@@ -162,7 +162,7 @@ func HandleError(err error) {
 
 // logError prints an error with the call stack of the location it was reported
 func logError(err error) {
-	klog.ErrorDepth(2, err)
+	// klog.ErrorDepth(2, err)
 }
 
 type rudimentaryErrorBackoff struct {

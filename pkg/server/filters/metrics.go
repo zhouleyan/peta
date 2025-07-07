@@ -19,8 +19,8 @@ package filters
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
-	"k8s.io/klog/v2"
 	"net/http"
+	"peta.io/peta/pkg/log"
 	"peta.io/peta/pkg/server/request"
 	"peta.io/peta/pkg/server/responsewriter"
 	"peta.io/peta/pkg/utils/iputils"
@@ -117,13 +117,13 @@ func WithMetrics(next http.Handler) http.Handler {
 		}
 
 		// Record log for each request
-		logWithVerbose := klog.V(4)
+		logWithVerbose := log.Debugf
 		// Always log error response
 		if wrapper.StatusCode > http.StatusBadRequest {
-			logWithVerbose = klog.V(0)
+			logWithVerbose = log.Infof
 		}
 
-		logWithVerbose.Infof("%s - \"%s %s %s\" %d %d %dms",
+		logWithVerbose("%s - \"%s %s %s\" %d %d %dms",
 			iputils.RemoteIP(req),
 			req.Method,
 			req.URL,

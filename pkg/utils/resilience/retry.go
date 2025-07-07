@@ -19,7 +19,7 @@ package resilience
 
 import (
 	"errors"
-	"k8s.io/klog/v2"
+	"peta.io/peta/pkg/log"
 	"time"
 )
 
@@ -39,7 +39,7 @@ func Retry(maxWait time.Duration, failAfter time.Duration, fn func() error) (err
 			retryStart = time.Now().UTC()
 		}
 
-		klog.Errorf("retring in %f seconds...", loopWait.Seconds())
+		log.Errorf("retring in %f seconds...", loopWait.Seconds())
 		time.Sleep(loopWait)
 		loopWait = loopWait * time.Duration(int64(2))
 		if loopWait > maxWait {

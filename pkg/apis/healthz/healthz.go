@@ -21,9 +21,9 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/emicklei/go-restful/v3"
-	"k8s.io/klog/v2"
 	"net/http"
 	"peta.io/peta/pkg/apis"
+	"peta.io/peta/pkg/log"
 	"strings"
 	"sync"
 )
@@ -64,10 +64,10 @@ func (h *handler) installHealthz(path string) restful.RouteFunction {
 		checks = []HealthChecker{}
 	}
 	if len(checks) == 0 {
-		klog.V(5).Info("No default health checks specified. Installing the ping handler.")
+		log.Infoln("No default health checks specified. Installing the ping handler.")
 		checks = []HealthChecker{PingHealthz}
 	}
-	klog.V(5).Infof("Installing health checkers for (%v): %v", path, formatQuoted(checkerName(checks...)...))
+	log.Infof("Installing health checkers for (%v): %v", path, formatQuoted(checkerName(checks...)...))
 
 	return handleRootHealth(name, nil, checks...)
 }
@@ -115,7 +115,7 @@ func handleRootHealth(name string, firstTimeHealthy func(), checks ...HealthChec
 
 		// always be verbose on failure
 		if len(failedChecks) > 0 {
-			klog.V(2).Infof("%s check failed: %s\n%v", strings.Join(failedChecks, ","), name, failedVerboseLogOutput.String())
+			log.Infof("%s check failed: %s\n%v", strings.Join(failedChecks, ","), name, failedVerboseLogOutput.String())
 			http.Error(response, fmt.Sprintf("%s%s check failed", individualCheckOutput.String(), name), http.StatusInternalServerError)
 			return
 		}

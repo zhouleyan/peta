@@ -23,13 +23,13 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/emicklei/go-restful/v3"
-	"k8s.io/klog/v2"
 	"net/http"
 	"peta.io/peta/pkg/apis"
 	configv1alpha2 "peta.io/peta/pkg/apis/config/v1alpha2"
 	healthzhandler "peta.io/peta/pkg/apis/healthz"
 	iamv1alpha2 "peta.io/peta/pkg/apis/iam/v1alpha2"
 	versionhandler "peta.io/peta/pkg/apis/version"
+	"peta.io/peta/pkg/log"
 	"peta.io/peta/pkg/persistence"
 	urlruntime "peta.io/peta/pkg/runtime"
 	"peta.io/peta/pkg/server/filters"
@@ -103,7 +103,7 @@ func (s *APIServer) PreRun() error {
 	s.installHealthz()
 
 	for _, ws := range s.container.RegisteredWebServices() {
-		klog.V(2).Infof("%s", ws.RootPath())
+		log.Infof("%s", ws.RootPath())
 	}
 
 	combinedHandler, err := s.buildHandlerChain(s.container)
@@ -122,17 +122,17 @@ func (s *APIServer) Run(ctx context.Context) (err error) {
 
 	go func() {
 		<-ctx.Done()
-		klog.V(0).Info("Database connections closing...")
+		log.Infof("Database connections closing...")
 		if err := s.Storage.Close(); err != nil {
-			klog.Errorf("failed to close database connections: %v", err)
+			log.Errorf("failed to close database connections: %v", err)
 		}
-		klog.V(0).Info("Server shutting down...")
+		log.Infof("Server shutting down...")
 		if err := s.Server.Shutdown(ctx); err != nil {
-			klog.Errorf("failed to shutdown server: %v", err)
+			log.Errorf("failed to shutdown server: %v", err)
 		}
 	}()
 
-	klog.V(0).Infof("Start listening on %s", s.Server.Addr)
+	log.Infof("Start listening on %s", s.Server.Addr)
 	if s.Server.TLSConfig != nil {
 		// TLSConfig not nil, no need to pass certFile & keyFile.
 		err = s.Server.ListenAndServeTLS("", "")
@@ -153,7 +153,7 @@ func logStackOnRecover(panicReason interface{}, w http.ResponseWriter) {
 		}
 		buffer.WriteString(fmt.Sprintf("    %s:%d\r\n", file, line))
 	}
-	klog.Errorln(buffer.String())
+	log.Errorln(buffer.String())
 
 	headers := http.Header{}
 	if ct := w.Header().Get("Content-Type"); len(ct) > 0 {

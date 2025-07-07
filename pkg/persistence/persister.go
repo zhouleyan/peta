@@ -23,8 +23,8 @@ import (
 	"github.com/emicklei/go-restful/v3"
 	"github.com/gobuffalo/pop/v6"
 	"github.com/pkg/errors"
-	"k8s.io/klog/v2"
 	"peta.io/peta/pkg/apis/healthz"
+	"peta.io/peta/pkg/log"
 	"peta.io/peta/pkg/utils/osutils"
 	"peta.io/peta/pkg/utils/resilience"
 	"strconv"
@@ -40,7 +40,7 @@ var _ Storage = &persister{}
 // the database is reachable. It can be injected for test purposes by changing the value
 var defaultInitialPing = func(p *persister) error {
 	if err := resilience.Retry(5*time.Second, 1*time.Minute, p.Ping); err != nil {
-		klog.Errorf("could not ping database: %v", err)
+		log.Errorf("could not ping database: %v", err)
 		return errors.WithStack(err)
 	}
 	return nil
@@ -82,7 +82,7 @@ func New(ctx context.Context, options *Options) (Storage, error) {
 	p := &persister{Conn: conn, initialPing: defaultInitialPing}
 
 	if options.Init {
-		klog.Infof("Database %s %s %s connecting...", p.Conn.Dialect.Name(), connectionDetails.Database, connectionDetails.Host)
+		log.Infof("Database %s %s %s connecting...", p.Conn.Dialect.Name(), connectionDetails.Database, connectionDetails.Host)
 		if err := p.PingContext(ctx); err != nil {
 			return nil, err
 		}

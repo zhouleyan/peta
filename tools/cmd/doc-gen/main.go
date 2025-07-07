@@ -27,8 +27,6 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/validate"
 	"github.com/pkg/errors"
-	"k8s.io/klog/v2"
-	"log"
 	"os"
 	"os/exec"
 	"peta.io/peta/pkg/apis"
@@ -36,6 +34,7 @@ import (
 	"peta.io/peta/pkg/apis/healthz"
 	iamv1alpha2 "peta.io/peta/pkg/apis/iam/v1alpha2"
 	"peta.io/peta/pkg/apis/version"
+	"peta.io/peta/pkg/log"
 	urlruntime "peta.io/peta/pkg/runtime"
 )
 
@@ -48,7 +47,7 @@ func init() {
 func main() {
 	flag.Parse()
 	if err := validateSpec(generateSwaggerJSON()); err != nil {
-		klog.Warningf("Swagger specification validation failed: %v", err)
+		log.Warnf("Swagger specification validation failed: %v", err)
 	}
 }
 
@@ -65,9 +64,9 @@ func validateSpec(apiSpec []byte) error {
 	result, _ := v.Validate(swaggerDoc)
 
 	if result.HasWarnings() {
-		log.Printf("See warnings below:\n")
+		log.Infof("See warnings below:\n")
 		for _, warning := range result.Warnings {
-			log.Printf("- WARNING: %s\n", warning.Error())
+			log.Infof("- WARNING: %s\n", warning.Error())
 		}
 	}
 
@@ -76,7 +75,7 @@ func validateSpec(apiSpec []byte) error {
 		for _, desc := range result.Errors {
 			str += fmt.Sprintf("- %s\n", desc.Error())
 		}
-		log.Println(str)
+		log.Infoln(str)
 		return errors.New(str)
 	}
 
@@ -104,9 +103,9 @@ func generateSwaggerJSON() []byte {
 
 	data, _ := json.MarshalIndent(restfulspec.BuildSwagger(config), "", "  ")
 	if err := os.WriteFile(output, data, 0644); err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
-	log.Printf("successfully written to %s", output)
+	log.Infof("successfully written to %s", output)
 	return data
 }
 
@@ -154,7 +153,7 @@ func enrichSwaggerObject(swo *spec.Swagger) {
 func gitVersion() string {
 	out, err := exec.Command("sh", "-c", "git tag --sort=committerdate | tail -1 | tr -d '\n'").Output()
 	if err != nil {
-		log.Printf("failed to get git version: %s", err)
+		log.Infof("failed to get git version: %s", err)
 		return "v0.0.0"
 	}
 	return string(out)

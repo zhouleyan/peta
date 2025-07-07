@@ -21,7 +21,7 @@ import (
 	"errors"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"k8s.io/klog/v2"
+	"peta.io/peta/pkg/log"
 	"peta.io/peta/pkg/utils/splitutils"
 	"regexp"
 	"strings"
@@ -38,7 +38,7 @@ type Config struct {
 func MergeConfig(fs *pflag.FlagSet, o *APIServerOptions) (*APIServerOptions, error) {
 	c, err := LoadConfig(o.ConfigFile)
 	if err != nil {
-		klog.Fatalf("failed to load config from disk: %v", err)
+		log.Fatalf("failed to load config from disk: %v", err)
 	}
 	o.Merge(fs, c)
 	return o, errors.Join(o.Validate()...)
