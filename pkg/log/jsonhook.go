@@ -84,5 +84,7 @@ func (j *JSONHook) Fire(entry *logrus.Entry) error {
 }
 
 func (j *JSONHook) Flush() {
-	j.q.Terminate()
+	if j.q != nil {
+		j.q.Terminate()
+	}
 }
