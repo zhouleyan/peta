@@ -51,7 +51,10 @@ type Options struct {
 	PrettyPrint bool   //default false
 
 	// Log File Rotate
-	MaxSize, MaxAge, MaxBackups uint
+	MaxSize, MaxAge, MaxBackups int
+
+	// Async
+	Async bool // default false
 }
 
 func Setup() {
@@ -76,7 +79,7 @@ func Setup() {
 
 	logger.SetOutput(os.Stderr)
 
-	jsonHook := NewJSONHook(o.LogFile, o.PrettyPrint, o.MaxSize, o.MaxAge, o.MaxBackups)
+	jsonHook := NewJSONHook(o.LogFile, o.Async, o.PrettyPrint, o.MaxSize, o.MaxAge, o.MaxBackups)
 
 	logger.AddHook(jsonHook)
 
@@ -92,9 +95,10 @@ func init() {
 	commandLine.StringVar(&log.TimestampFormat, "timestamp-format", time.DateTime, "to use for display when a full timestamp is printed")
 	commandLine.StringVar(&log.LogFile, "log-file", "peta.log", "If non-empty, write log files in this directory")
 	commandLine.BoolVar(&log.PrettyPrint, "pretty-print", false, "If true, will indent all JSON logs")
-	commandLine.UintVar(&log.MaxSize, "log-file-size", 10, "the size of the log file before rotating(MB)")
-	commandLine.UintVar(&log.MaxAge, "log-age", 28, "the age of the log file before rotating")
-	commandLine.UintVar(&log.MaxBackups, "log-backups", 3, "the number of log files to keep")
+	commandLine.IntVar(&log.MaxSize, "log-file-size", 10, "the size of the log file before rotating(MB)")
+	commandLine.IntVar(&log.MaxAge, "log-age", 28, "the age of the log file before rotating")
+	commandLine.IntVar(&log.MaxBackups, "log-backups", 3, "the number of log files to keep")
+	commandLine.BoolVar(&log.Async, "async", false, "If true, will print logs asynchronously")
 }
 
 func Infoln(args ...interface{}) {

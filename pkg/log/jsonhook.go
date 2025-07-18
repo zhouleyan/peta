@@ -24,15 +24,15 @@ import (
 	"peta.io/peta/pkg/utils/queue"
 )
 
-func NewJSONHook(logFile string, prettyPrint bool, MaxSize, MaxAge, MaxBackups uint) *JSONHook {
+func NewJSONHook(logFile string, async, prettyPrint bool, MaxSize, MaxAge, MaxBackups int) *JSONHook {
 	l := &lumberjack.Logger{
 		Filename: logFile,
 		// 10MB
-		MaxSize: 10,
+		MaxSize: MaxSize,
 		// 28 days
-		MaxAge: 28,
+		MaxAge: MaxAge,
 		// Maximum number of backup files retained
-		MaxBackups: 3,
+		MaxBackups: MaxBackups,
 		LocalTime:  true,
 		Compress:   true,
 	}
@@ -41,8 +41,11 @@ func NewJSONHook(logFile string, prettyPrint bool, MaxSize, MaxAge, MaxBackups u
 		PrettyPrint: prettyPrint,
 	}
 
-	q := queue.NewQueue(10, 100)
-	q.Run()
+	var q queue.Queue
+	if async {
+		q = queue.NewQueue(10, 100)
+		q.Run()
+	}
 
 	return &JSONHook{
 		Writer:    l,
@@ -70,9 +73,12 @@ func (j *JSONHook) Fire(entry *logrus.Entry) error {
 	}
 
 	// writes to files
-	j.q.Push(queue.NewJob(formatted, func(v interface{}) {
-		_, err = j.Writer.Write(v.([]byte))
-	}))
+	if j.q != nil {
+		j.q.Push(queue.NewJob(formatted, func(v interface{}) {
+			_, err = j.Writer.Write(v.([]byte))
+		}))
+	}
+	_, err = j.Writer.Write(formatted)
 	return err
 }
 

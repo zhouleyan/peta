@@ -22,8 +22,7 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"peta.io/peta/pkg/log"
-	"peta.io/peta/pkg/utils/splitutils"
-	"regexp"
+	"peta.io/peta/pkg/utils/pathutils"
 	"strings"
 	"sync"
 )
@@ -46,7 +45,7 @@ func MergeConfig(fs *pflag.FlagSet, o *APIServerOptions) (*APIServerOptions, err
 
 // LoadConfig load config file.
 func LoadConfig(path string) (*APIServerOptions, error) {
-	name, path := resolvePath(path)
+	name, path := pathutils.ResolvePath(path)
 	if name == "" {
 		name = defaultConfigName
 	}
@@ -71,20 +70,6 @@ func LoadConfig(path string) (*APIServerOptions, error) {
 
 	// 2.load from disk.
 	return c.loadFromDisk()
-}
-
-func resolvePath(p string) (name, path string) {
-	re := regexp.MustCompile(`\..[a-zA-Z0-9_]+$`)
-	if re.MatchString(p) {
-		parts := splitutils.SplitPath(p)
-		name = splitutils.LastOfSlice(parts)
-		re = regexp.MustCompile(`^[^.]*`)
-		name = re.FindString(name)
-		path = "/" + strings.Join(parts[:len(parts)-1], "/")
-	} else {
-		path = strings.TrimSuffix(p, "/")
-	}
-	return name, path
 }
 
 func (c *Config) loadFromDisk() (*APIServerOptions, error) {

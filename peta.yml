@@ -10,7 +10,7 @@ database:
   user: zly
   password: zly123456!
   url: ""
-  init: false
+  init: true
 
 metrics:
   enable: true
