@@ -77,8 +77,9 @@ func (j *JSONHook) Fire(entry *logrus.Entry) error {
 		j.q.Push(queue.NewJob(formatted, func(v interface{}) {
 			_, err = j.Writer.Write(v.([]byte))
 		}))
+	} else {
+		_, err = j.Writer.Write(formatted)
 	}
-	_, err = j.Writer.Write(formatted)
 	return err
 }
 
