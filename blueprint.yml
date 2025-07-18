@@ -1,0 +1,28 @@
+# nonk8s
+#apiVersion: blueprint.peta.io/v1alpha1
+kind: Blueprint
+#metadata:
+#  name: sample
+#  namespace: ns
+#  labels: {}
+#  annotations: {}
+#spec:
+#  components:
+#    - name: postgres-sample
+#      type: postgres
+#      enabled: true
+#      hosts:
+#        - name: pg-node1
+#          address: 10.0.0.31
+#          internalAddress: 10.0.0.31
+#          port: 5432
+#          user: root
+#          password: 123456
+#          privateKey: ""
+#          privateKeyPath: ""
+#          arch: amd64
+#          timeout: 30
+#          label: {}
+#      dependsOn: []
+#      config: {}
+      

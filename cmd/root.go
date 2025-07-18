@@ -18,16 +18,28 @@
 package cmd
 
 import (
+	"flag"
 	"github.com/spf13/cobra"
 	"os"
 	"peta.io/peta/cmd/initialize"
+	"peta.io/peta/cmd/pg"
 	"peta.io/peta/cmd/serve"
 	"peta.io/peta/cmd/version"
 	"peta.io/peta/pkg/log"
+	"peta.io/peta/pkg/server/options"
+	"strings"
 )
 
 // NewPetaCommand creates a new peta root command.
 func NewPetaCommand() *cobra.Command {
+	nfs := new(options.NamedFlagSets)
+	fs := nfs.FlagSet("log")
+	local := flag.NewFlagSet("local", flag.ExitOnError)
+	log.InitFlags(local)
+	local.VisitAll(func(fl *flag.Flag) {
+		fl.Name = strings.Replace(fl.Name, "_", "-", -1)
+		fs.AddGoFlag(fl)
+	})
 	cmd := &cobra.Command{
 		Use:   "peta",
 		Short: "Run and manage PETA",
@@ -39,6 +51,12 @@ func NewPetaCommand() *cobra.Command {
 			log.Flush()
 		},
 	}
+
+	pfs := cmd.PersistentFlags()
+	for _, f := range nfs.FlagSets {
+		pfs.AddFlagSet(f)
+	}
+	options.SetUsageAndHelpFunc(cmd, nfs)
 	RegisterCommandRecursive(cmd)
 
 	return cmd
@@ -49,6 +67,7 @@ func RegisterCommandRecursive(cmd *cobra.Command) {
 	initialize.RegisterCommands(cmd)
 	serve.RegisterCommands(cmd)
 	version.RegisterCommands(cmd)
+	pg.RegisterCommands(cmd)
 }
 
 // Execute adds all child commands to the root command sets flags appropriately.
