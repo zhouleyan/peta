@@ -20,10 +20,11 @@ package log
 import (
 	"bytes"
 	"fmt"
-	jsoniter "github.com/json-iterator/go"
-	"github.com/sirupsen/logrus"
 	"runtime"
 	"time"
+
+	jsoniter "github.com/json-iterator/go"
+	"github.com/sirupsen/logrus"
 )
 
 // Default key names for the default fields

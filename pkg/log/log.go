@@ -19,10 +19,11 @@ package log
 
 import (
 	"flag"
-	"github.com/sirupsen/logrus"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 var log Log

@@ -21,8 +21,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/spf13/cobra"
 	"net/http"
+
+	"github.com/spf13/cobra"
 	"peta.io/peta/pkg/server"
 	"peta.io/peta/pkg/server/options"
 	"peta.io/peta/pkg/signals"

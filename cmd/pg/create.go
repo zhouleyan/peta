@@ -18,10 +18,11 @@
 package pg
 
 import (
-	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
 	"os"
 	"path/filepath"
+
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 	"peta.io/peta/pkg/log"
 	"peta.io/peta/pkg/types"
 	"peta.io/peta/pkg/utils/errutils"

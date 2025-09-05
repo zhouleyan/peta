@@ -18,9 +18,10 @@
 package log
 
 import (
+	"io"
+
 	"github.com/natefinch/lumberjack"
 	"github.com/sirupsen/logrus"
-	"io"
 	"peta.io/peta/pkg/utils/queue"
 )
 

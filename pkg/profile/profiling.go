@@ -18,8 +18,9 @@
 package profile
 
 import (
-	"github.com/pkg/profile"
 	"os"
+
+	"github.com/pkg/profile"
 )
 
 type noop struct{}

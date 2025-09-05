@@ -19,12 +19,13 @@ package options
 
 import (
 	"errors"
+	"strings"
+	"sync"
+
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"peta.io/peta/pkg/log"
 	"peta.io/peta/pkg/utils/pathutils"
-	"strings"
-	"sync"
 )
 
 type Config struct {

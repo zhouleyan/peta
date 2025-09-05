@@ -19,8 +19,9 @@ package resilience
 
 import (
 	"errors"
-	"peta.io/peta/pkg/log"
 	"time"
+
+	"peta.io/peta/pkg/log"
 )
 
 // Retry executes a fn until no error is returned or failAfter is reached.

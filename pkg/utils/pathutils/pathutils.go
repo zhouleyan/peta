@@ -18,9 +18,10 @@
 package pathutils
 
 import (
-	"peta.io/peta/pkg/utils/splitutils"
 	"regexp"
 	"strings"
+
+	"peta.io/peta/pkg/utils/splitutils"
 )
 
 func ResolvePath(p string) (name, path string) {

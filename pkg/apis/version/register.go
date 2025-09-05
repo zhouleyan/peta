@@ -18,9 +18,10 @@
 package version
 
 import (
+	"net/http"
+
 	restfulspec "github.com/emicklei/go-restful-openapi/v2"
 	"github.com/emicklei/go-restful/v3"
-	"net/http"
 	"peta.io/peta/pkg/apis"
 	"peta.io/peta/pkg/version"
 )

@@ -19,15 +19,16 @@ package cmd
 
 import (
 	"flag"
-	"github.com/spf13/cobra"
 	"os"
+	"strings"
+
+	"github.com/spf13/cobra"
 	"peta.io/peta/cmd/initialize"
 	"peta.io/peta/cmd/pg"
 	"peta.io/peta/cmd/serve"
 	"peta.io/peta/cmd/version"
 	"peta.io/peta/pkg/log"
 	"peta.io/peta/pkg/server/options"
-	"strings"
 )
 
 // NewPetaCommand creates a new peta root command.

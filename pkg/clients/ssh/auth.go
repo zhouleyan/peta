@@ -18,8 +18,9 @@
 package ssh
 
 import (
-	"golang.org/x/crypto/ssh"
 	"os"
+
+	"golang.org/x/crypto/ssh"
 )
 
 // Auth represents ssh auth method.

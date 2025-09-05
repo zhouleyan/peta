@@ -19,8 +19,9 @@ package ssh
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"testing"
+
+	"github.com/pkg/errors"
 )
 
 func TestSSHRun(t *testing.T) {

@@ -20,14 +20,15 @@ package options
 import (
 	"flag"
 	"fmt"
-	"github.com/spf13/pflag"
 	"os"
+	"strings"
+
+	"github.com/spf13/pflag"
 	"peta.io/peta/pkg/log"
 	"peta.io/peta/pkg/persistence"
 	"peta.io/peta/pkg/server/auditing"
 	"peta.io/peta/pkg/server/metrics"
 	"peta.io/peta/pkg/utils/iputils"
-	"strings"
 )
 
 const (

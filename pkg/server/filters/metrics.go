@@ -18,15 +18,16 @@
 package filters
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
 	"net/http"
+	"strconv"
+	"sync"
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
 	"peta.io/peta/pkg/log"
 	"peta.io/peta/pkg/server/request"
 	"peta.io/peta/pkg/server/responsewriter"
 	"peta.io/peta/pkg/utils/iputils"
-	"strconv"
-	"sync"
-	"time"
 )
 
 const (

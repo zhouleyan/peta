@@ -20,12 +20,13 @@ package healthz
 import (
 	"bytes"
 	"fmt"
-	"github.com/emicklei/go-restful/v3"
 	"net/http"
-	"peta.io/peta/pkg/apis"
-	"peta.io/peta/pkg/log"
 	"strings"
 	"sync"
+
+	"github.com/emicklei/go-restful/v3"
+	"peta.io/peta/pkg/apis"
+	"peta.io/peta/pkg/log"
 )
 
 const DefaultHealthzPath = "/healthz"

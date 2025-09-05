@@ -19,15 +19,16 @@ package ssh
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
-	"golang.org/x/crypto/ssh"
 	"io"
 	"net"
-	"peta.io/peta/pkg/log"
-	"peta.io/peta/pkg/utils/iputils"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/pkg/errors"
+	"golang.org/x/crypto/ssh"
+	"peta.io/peta/pkg/log"
+	"peta.io/peta/pkg/utils/iputils"
 )
 
 // DefaultTimeout is the timeout of ssh client connection.

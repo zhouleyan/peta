@@ -19,8 +19,9 @@ package request
 
 import (
 	"net/http"
-	"peta.io/peta/pkg/utils/sets"
 	"testing"
+
+	"peta.io/peta/pkg/utils/sets"
 )
 
 func newTestRequestInfoResolver() InfoResolver {

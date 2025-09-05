@@ -21,13 +21,14 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"golang.org/x/crypto/ssh"
-	"golang.org/x/crypto/ssh/knownhosts"
 	"log"
 	"net"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/knownhosts"
 )
 
 func KnownHosts(file string) (ssh.HostKeyCallback, error) {

@@ -19,8 +19,9 @@ package term
 
 import (
 	"fmt"
-	"github.com/moby/term"
 	"io"
+
+	"github.com/moby/term"
 )
 
 // Size returns the current width and height of the user's term. If it isn't a term,

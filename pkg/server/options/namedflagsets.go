@@ -20,11 +20,12 @@ package options
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"strings"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"io"
 	"peta.io/peta/pkg/utils/term"
-	"strings"
 )
 
 const (

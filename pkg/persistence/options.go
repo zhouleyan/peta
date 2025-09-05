@@ -19,9 +19,10 @@ package persistence
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/spf13/pflag"
 	"peta.io/peta/pkg/utils/iputils"
-	"strings"
 )
 
 const (

@@ -22,8 +22,10 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/emicklei/go-restful/v3"
 	"net/http"
+	rt "runtime"
+
+	"github.com/emicklei/go-restful/v3"
 	"peta.io/peta/pkg/apis"
 	configv1alpha2 "peta.io/peta/pkg/apis/config/v1alpha2"
 	healthzhandler "peta.io/peta/pkg/apis/healthz"
@@ -38,7 +40,6 @@ import (
 	"peta.io/peta/pkg/server/request"
 	"peta.io/peta/pkg/utils/sets"
 	"peta.io/peta/pkg/version"
-	rt "runtime"
 )
 
 // APIServer is PETA server

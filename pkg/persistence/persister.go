@@ -20,6 +20,9 @@ package persistence
 import (
 	"context"
 	"embed"
+	"strconv"
+	"time"
+
 	"github.com/emicklei/go-restful/v3"
 	"github.com/gobuffalo/pop/v6"
 	"github.com/pkg/errors"
@@ -27,8 +30,6 @@ import (
 	"peta.io/peta/pkg/log"
 	"peta.io/peta/pkg/utils/osutils"
 	"peta.io/peta/pkg/utils/resilience"
-	"strconv"
-	"time"
 )
 
 //go:embed migrations/*

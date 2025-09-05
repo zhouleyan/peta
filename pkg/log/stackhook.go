@@ -20,8 +20,9 @@ package log
 import (
 	"bytes"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"runtime"
+
+	"github.com/sirupsen/logrus"
 )
 
 // StackHook add caller frames

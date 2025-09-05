@@ -19,14 +19,15 @@ package apis
 
 import (
 	"fmt"
-	"github.com/emicklei/go-restful/v3"
-	"github.com/pkg/errors"
 	"net/http"
-	"peta.io/peta/pkg/log"
 	"runtime"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/emicklei/go-restful/v3"
+	"github.com/pkg/errors"
+	"peta.io/peta/pkg/log"
 )
 
 // Avoid emitting errors that look like valid HTML. Quotes are okay.
