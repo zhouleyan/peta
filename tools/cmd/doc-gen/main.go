@@ -42,6 +42,8 @@ import (
 var output string
 
 func init() {
+	log.Setup()
+
 	flag.StringVar(&output, "output", "./api/peta-openapi-spec/swagger.json", "--output=./api.json")
 }
 
@@ -50,6 +52,7 @@ func main() {
 	if err := validateSpec(generateSwaggerJSON()); err != nil {
 		log.Warnf("Swagger specification validation failed: %v", err)
 	}
+	log.Flush()
 }
 
 func validateSpec(apiSpec []byte) error {
