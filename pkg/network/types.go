@@ -15,9 +15,106 @@
  *  along with PETA. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package net
+package network
 
-import "net"
+import (
+	"encoding/json"
+	"fmt"
+	"net"
+)
+
+// IPNet is like net.IPNet but adds JSON marshalling and unmarshalling
+type IPNet net.IPNet
+
+// ParseCIDR takes a string like "10.2.3.1/24" and
+// return IPNet with "10.2.3.1" and /24 mask
+func ParseCIDR(s string) (*net.IPNet, error) {
+	ip, ipn, err := net.ParseCIDR(s)
+	if err != nil {
+		return nil, err
+	}
+	ipn.IP = ip
+	return ipn, nil
+}
+
+// MarshalJSON
+// 1. Only when the serialized object is a pointer type, will its pointer receiver's MarshalJSON method be called
+// 2. If the object is a value type and does not have a MarshalJSON method with a value receiver,
+// the default serialization logic will be used, and the method for a pointer receiver will not be called.
+func (n IPNet) MarshalJSON() ([]byte, error) {
+	return json.Marshal((*net.IPNet)(&n).String())
+}
+
+func (n *IPNet) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+
+	tmp, err := ParseCIDR(s)
+	if err != nil {
+		return err
+	}
+
+	*n = IPNet(*tmp)
+	return nil
+}
+
+// IPConfig contains values necessary to configure an IP address on an interface
+type IPConfig struct {
+	// Index into Result structs Interfaces list
+	Interface *int
+	Address   net.IPNet
+	Gateway   net.IP
+}
+
+func (i *IPConfig) String() string {
+	return fmt.Sprintf("%+v", *i)
+}
+
+func (i *IPConfig) Copy() *IPConfig {
+	if i == nil {
+		return nil
+	}
+
+	ipc := &IPConfig{
+		Address: i.Address,
+		Gateway: i.Gateway,
+	}
+	if i.Interface != nil {
+		inf := *i.Interface
+		ipc.Interface = &inf
+	}
+	return ipc
+}
+
+// JSON (un)marshall types
+type ipConfig struct {
+	Interface *int   `json:"interface,omitempty"`
+	Address   IPNet  `json:"address"`
+	Gateway   net.IP `json:"gateway,omitempty"`
+}
+
+func (i *IPConfig) MarshalJSON() ([]byte, error) {
+	ipc := ipConfig{
+		Interface: i.Interface,
+		Address:   IPNet(i.Address),
+		Gateway:   i.Gateway,
+	}
+
+	return json.Marshal(ipc)
+}
+
+func (i *IPConfig) UnmarshalJSON(data []byte) error {
+	ipc := ipConfig{}
+	if err := json.Unmarshal(data, &ipc); err != nil {
+		return err
+	}
+	i.Interface = ipc.Interface
+	i.Address = net.IPNet(ipc.Address)
+	i.Gateway = ipc.Gateway
+	return nil
+}
 
 type IPAM struct {
 	Type string `json:"type" yaml:"type"` // host-local

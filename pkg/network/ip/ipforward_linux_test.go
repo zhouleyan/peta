@@ -15,6 +15,4 @@
  *  along with PETA. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package bridge
-
-const defaultBrName = "br0"
+package ip
