@@ -77,4 +77,12 @@ func TestLink(t *testing.T) {
 			t.Log(r)
 		}
 	})
+
+	t.Run("TestVlanList", func(t *testing.T) {
+		l, err := h.BridgeVlanList()
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Log(l)
+	})
 }

@@ -22,6 +22,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/vishvananda/netlink"
+	"github.com/vishvananda/netlink/nl"
 )
 
 // Arbitrary limit on max attempts at netlink calls if they are repeatedly interrupted.
@@ -117,4 +118,26 @@ func (h Handle) RouteList(link netlink.Link, family int) ([]netlink.Route, error
 		return err
 	})
 	return routes, discardErrDumpInterrupted(err)
+}
+
+// AddrList calls netlink.AddrList, retrying if necessary
+func (h Handle) AddrList(link netlink.Link, family int) ([]netlink.Addr, error) {
+	var addresses []netlink.Addr
+	var err error
+	retryOnIntr(func() error {
+		addresses, err = h.AddrList(link, family)
+		return err
+	})
+	return addresses, discardErrDumpInterrupted(err)
+}
+
+// BridgeVlanList calls netlink.BridgeVlanList, retrying if necessary
+func (h Handle) BridgeVlanList() (map[int32][]*nl.BridgeVlanInfo, error) {
+	var err error
+	var info map[int32][]*nl.BridgeVlanInfo
+	retryOnIntr(func() error {
+		info, err = h.Handle.BridgeVlanList()
+		return err
+	})
+	return info, discardErrDumpInterrupted(err)
 }

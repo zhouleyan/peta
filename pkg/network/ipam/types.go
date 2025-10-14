@@ -28,6 +28,17 @@ const (
 	IPv6 Family = "ipv6"
 )
 
+type IPAM struct {
+	Type string `json:"type" yaml:"type"` // host-local
+
+	Spec
+}
+
+// IsEmpty returns true if IPAM structure has no value, otherwise return false
+func (i *IPAM) IsEmpty() bool {
+	return i.Type == ""
+}
+
 // Spec is the IPAM specification of the node
 type Spec struct {
 	// PodCIDRs is the list of CIDRs available to the node for allocation.

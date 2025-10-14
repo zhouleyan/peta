@@ -28,6 +28,7 @@ import (
 	"golang.org/x/sys/unix"
 	"peta.io/peta/pkg/network"
 	"peta.io/peta/pkg/network/ip"
+	"peta.io/peta/pkg/network/ipam"
 	"peta.io/peta/pkg/network/netlinksafe"
 	"peta.io/peta/pkg/utils/sysctl"
 )
@@ -105,7 +106,7 @@ type BrConf struct {
 	vlans []int
 }
 
-func CreateBridge(h netlinksafe.Handle, c *BrConf) (*netlink.Bridge, error) {
+func SetupBridge(h netlinksafe.Handle, c *BrConf) (*netlink.Bridge, error) {
 	var err error
 	c, _, err = loadBrConf(c)
 	if err != nil {
@@ -143,6 +144,14 @@ func CreateBridge(h netlinksafe.Handle, c *BrConf) (*netlink.Bridge, error) {
 	br, err := setupBridge(h, c)
 	if err != nil {
 		return nil, err
+	}
+
+	// 4. Set IPAM
+	if isLayer3 {
+		err = ipam.Add(&c.IPAM.Spec)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// 4. Set bridge IP

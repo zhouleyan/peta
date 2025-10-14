@@ -118,17 +118,6 @@ func (i *IPConfig) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-type IPAM struct {
-	Type string `json:"type" yaml:"type"` // host-local
-
-	ipam.Spec
-}
-
-// IsEmpty returns true if IPAM structure has no value, otherwise return false
-func (i *IPAM) IsEmpty() bool {
-	return i.Type == ""
-}
-
 // DNS contains values for DNS resolvers
 type DNS struct {
 	Nameservers []string `json:"nameservers" yaml:"nameservers"`
@@ -161,9 +150,9 @@ func (d *DNS) Copy() *DNS {
 type Conf struct {
 	CNIVersion string `json:"cniVersion,omitempty"`
 
-	Name         string `json:"name,omitempty" yaml:"name,omitempty"`
-	Version      string `json:"version,omitempty" yaml:"version,omitempty"`
-	Type         string `json:"type,omitempty" yaml:"type,omitempty"`
-	Capabilities []bool `json:"capabilities,omitempty" yaml:"capabilities,omitempty"`
-	IPAM         IPAM   `json:"ipam,omitempty" yaml:"ipam,omitempty"`
+	Name         string    `json:"name,omitempty" yaml:"name,omitempty"`
+	Version      string    `json:"version,omitempty" yaml:"version,omitempty"`
+	Type         string    `json:"type,omitempty" yaml:"type,omitempty"`
+	Capabilities []bool    `json:"capabilities,omitempty" yaml:"capabilities,omitempty"`
+	IPAM         ipam.IPAM `json:"ipam,omitempty" yaml:"ipam,omitempty"`
 }
