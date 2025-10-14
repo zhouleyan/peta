@@ -21,6 +21,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+
+	"peta.io/peta/pkg/network/ipam"
 )
 
 // IPNet is like net.IPNet but adds JSON marshalling and unmarshalling
@@ -118,6 +120,8 @@ func (i *IPConfig) UnmarshalJSON(data []byte) error {
 
 type IPAM struct {
 	Type string `json:"type" yaml:"type"` // host-local
+
+	ipam.Spec
 }
 
 // IsEmpty returns true if IPAM structure has no value, otherwise return false
@@ -153,75 +157,13 @@ func (d *DNS) Copy() *DNS {
 	return to
 }
 
-type VlanTrunk struct {
-	MinID *int `json:"minID,omitempty" yaml:"minID,omitempty"`
-	MaxID *int `json:"maxID,omitempty" yaml:"maxID,omitempty"`
-	ID    *int `json:"id,omitempty" yaml:"id,omitempty"`
-}
-
-type BridgeArgs struct {
-	Mac string `json:"mac,omitempty" yaml:"mac,omitempty"`
-}
-
 // Conf describes a net configuration for a specific network.
 type Conf struct {
+	CNIVersion string `json:"cniVersion,omitempty"`
+
 	Name         string `json:"name,omitempty" yaml:"name,omitempty"`
 	Version      string `json:"version,omitempty" yaml:"version,omitempty"`
 	Type         string `json:"type,omitempty" yaml:"type,omitempty"`
 	Capabilities []bool `json:"capabilities,omitempty" yaml:"capabilities,omitempty"`
 	IPAM         IPAM   `json:"ipam,omitempty" yaml:"ipam,omitempty"`
-}
-
-type BrConf struct {
-	Conf
-	BrName string `json:"bridge" yaml:"bridge"`
-
-	// To assign an IP address to the bridge device and enable IP forwarding
-	// (e.g. 10.244.0.1 for the subnet 10.244.0.0/24)
-	IsGW bool `json:"isGateway" yaml:"isGateway"`
-
-	// Change the default route of the host machine to point to the bridge IP
-	IsDefaultGW bool `json:"isDefaultGateway" yaml:"isDefaultGateway"`
-
-	ForceAddress bool `json:"forceAddress" yaml:"forceAddress"`
-
-	IPMasq        bool    `json:"ipMasq" yaml:"ipMasq"`
-	IPMasqBackend *string `json:"ipMasqBackend,omitempty" yaml:"IPMasqBackend"` // "iptables" or "nftables"
-	MTU           int     `json:"mtu" yaml:"mtu"`
-	HairpinMode   bool    `json:"hairpinMode" yaml:"hairpinMode"`
-	PromiscMode   bool    `json:"promiscMode" yaml:"promiscMode"`
-
-	// VLAN Mode
-	Vlan                int          `json:"vlan" yaml:"vlan"`
-	VlanTrunk           []*VlanTrunk `json:"vlanTrunk,omitempty" yaml:"vlanTrunk,omitempty"`
-	PreserveDefaultVlan bool         `json:"preserveDefaultVlan" yaml:"preserveDefaultVlan"`
-
-	MacSpoofChk               bool `json:"macspoofchk,omitempty" yaml:"macspoofchk,omitempty"`
-	EnableDad                 bool `json:"enabledad,omitempty" yaml:"enabledad,omitempty"` //Enable IPv6 Duplicate Address Detection (DAD)
-	DisableContainerInterface bool `json:"disableContainerInterface,omitempty" yaml:"disableContainerInterface,omitempty"`
-	PortIsolation             bool `json:"portIsolation,omitempty" yaml:"portIsolation,omitempty"`
-
-	Args struct {
-		Cni BridgeArgs `json:"cni,omitempty" yaml:"cni,omitempty"`
-	} `json:"args,omitempty" yaml:"args,omitempty"`
-	RuntimeConfig struct {
-		Mac string `json:"mac,omitempty" yaml:"mac,omitempty"`
-	} `json:"runtimeConfig,omitempty" yaml:"runtimeConfig,omitempty"`
-
-	mac   string
-	vlans []int
-}
-
-type gwInfo struct {
-	gws               []net.IPNet
-	family            int
-	defaultRouteFound bool
-}
-
-type cniBridgeIf struct {
-	Name        string
-	ifIndex     int
-	peerIndex   int
-	masterIndex int
-	found       bool
 }

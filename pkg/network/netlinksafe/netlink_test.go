@@ -26,13 +26,10 @@ import (
 
 func TestLink(t *testing.T) {
 	h, err := NewHandle()
-	if &h == nil {
-		t.Fatal("NewHandle failed")
-	}
-	defer h.Close()
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer h.Close()
 
 	t.Run("TestLinkByName", func(t *testing.T) {
 		link, err := h.LinkByName("virbr0")

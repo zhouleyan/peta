@@ -28,6 +28,41 @@ const (
 	IPv6 Family = "ipv6"
 )
 
+// Spec is the IPAM specification of the node
+type Spec struct {
+	// PodCIDRs is the list of CIDRs available to the node for allocation.
+	// When an IP is used, the IP will be added to Used
+	PodCIDR []string `json:"podCIDR" yaml:"podCIDR"`
+
+	// MinAllocate is the minimum number of IPs that must be allocated when
+	// the node is first bootstrapped.
+	// It defines the minimum base socket of addresses that must be available.
+	// After reaching this watermark, the PreAllocate and MaxAboveWatermark logic takes over to continue allocating IPs.
+	MinAllocate int `json:"minAllocate" yaml:"minAllocate"`
+
+	// MaxAllocate is the maximum number of IPs that can be allocated to the node.
+	// When the current amount of allocated IPs will approach this value,
+	// the considered value for PreAllocate will decrease down to 0 in order to
+	// not attempt to allocate more addresses than defined.
+	MaxAllocate int `json:"maxAllocate" yaml:"maxAllocate"`
+
+	// PreAllocate defines the number of IP addresses that must be
+	// available for allocation in the Spec.
+	// It defines the buffer of
+	// addresses available immediately without requiring cilium-operator to
+	// get involved.
+	PreAllocate int `json:"preAllocate" yaml:"preAllocate"`
+
+	// MaxAboveWatermark is the maximum number of addresses to allocate
+	// beyond the addresses needed to reach the PreAllocate watermark.
+	// Going above the watermark can help reduce the number of API calls to
+	// allocate IPs, e.g. when a new ENI is allocated, as many secondary
+	// IPs as possible are allocated.
+	// Limiting the amount can help reduce
+	// waste of IPs.
+	MaxAboveWatermark int `json:"maxAboveWatermark" yaml:"maxAboveWatermark"`
+}
+
 // AllocationIP is an IP which is available for allocation, or already
 // has been allocated
 type AllocationIP struct {

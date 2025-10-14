@@ -18,44 +18,188 @@
 package bridge
 
 import (
+	"errors"
 	"fmt"
+	"net"
+	"runtime"
+	"sort"
 
 	"github.com/vishvananda/netlink"
+	"golang.org/x/sys/unix"
 	"peta.io/peta/pkg/network"
+	"peta.io/peta/pkg/network/ip"
 	"peta.io/peta/pkg/network/netlinksafe"
+	"peta.io/peta/pkg/utils/sysctl"
 )
 
 const defaultBrName = "br0"
 
-func CreateBridge(h netlinksafe.Handle, conf *network.BrConf) (*netlink.Bridge, error) {
-	// 1. Check config
-	isLayer3 := conf.IPAM.Type != ""
+func init() {
+	// this ensures that main runs only on main thread (thread group leader).
+	// since namespace ops (unshare, setns) are done for a single thread, we
+	// must ensure that the goroutine does not jump from OS thread to thread
+	runtime.LockOSThread()
+}
 
-	if isLayer3 && conf.DisableContainerInterface {
+type gwInfo struct {
+	gws               []net.IPNet
+	family            int
+	defaultRouteFound bool
+}
+
+type cniBridgeIf struct {
+	Name        string
+	ifIndex     int
+	peerIndex   int
+	masterIndex int
+	found       bool
+}
+
+type VlanTrunk struct {
+	MinID *int `json:"minID,omitempty" yaml:"minID,omitempty"`
+	MaxID *int `json:"maxID,omitempty" yaml:"maxID,omitempty"`
+	ID    *int `json:"id,omitempty" yaml:"id,omitempty"`
+}
+
+type BridgeArgs struct {
+	Mac string `json:"mac,omitempty" yaml:"mac,omitempty"`
+}
+
+type BrConf struct {
+	network.Conf
+	BrName string `json:"bridge" yaml:"bridge"`
+
+	// To assign an IP address to the bridge device and enable IP forwarding
+	// (e.g. 10.244.0.1 for the subnet 10.244.0.0/24)
+	IsGW bool `json:"isGateway" yaml:"isGateway"`
+
+	// Change the default route of the host machine to point to the bridge IP
+	IsDefaultGW bool `json:"isDefaultGateway" yaml:"isDefaultGateway"`
+
+	ForceAddress bool `json:"forceAddress" yaml:"forceAddress"`
+
+	IPMasq        bool    `json:"ipMasq" yaml:"ipMasq"`
+	IPMasqBackend *string `json:"ipMasqBackend,omitempty" yaml:"IPMasqBackend"` // "iptables" or "nftables"
+	MTU           int     `json:"mtu" yaml:"mtu"`
+	HairpinMode   bool    `json:"hairpinMode" yaml:"hairpinMode"`
+	PromiscMode   bool    `json:"promiscMode" yaml:"promiscMode"`
+
+	// VLAN Mode
+	Vlan                int          `json:"vlan" yaml:"vlan"`
+	VlanTrunk           []*VlanTrunk `json:"vlanTrunk,omitempty" yaml:"vlanTrunk,omitempty"`
+	PreserveDefaultVlan bool         `json:"preserveDefaultVlan" yaml:"preserveDefaultVlan"`
+
+	MacSpoofChk               bool `json:"macspoofchk,omitempty" yaml:"macspoofchk,omitempty"`
+	EnableDad                 bool `json:"enabledad,omitempty" yaml:"enabledad,omitempty"` //Enable IPv6 Duplicate Address Detection (DAD)
+	DisableContainerInterface bool `json:"disableContainerInterface,omitempty" yaml:"disableContainerInterface,omitempty"`
+	PortIsolation             bool `json:"portIsolation,omitempty" yaml:"portIsolation,omitempty"`
+
+	Args struct {
+		Cni BridgeArgs `json:"cni,omitempty" yaml:"cni,omitempty"`
+	} `json:"args,omitempty" yaml:"args,omitempty"`
+	RuntimeConfig struct {
+		Mac string `json:"mac,omitempty" yaml:"mac,omitempty"`
+	} `json:"runtimeConfig,omitempty" yaml:"runtimeConfig,omitempty"`
+
+	mac   string
+	vlans []int
+}
+
+func CreateBridge(h netlinksafe.Handle, c *BrConf) (*netlink.Bridge, error) {
+	var err error
+	c, _, err = loadBrConf(c)
+	if err != nil {
+		return nil, err
+	}
+	// 1. Check config
+	isLayer3 := c.IPAM.Type != ""
+
+	if isLayer3 && c.DisableContainerInterface {
 		return nil, fmt.Errorf("cannot use IPAM when DisableContainerInterface flag is set")
 	}
 
-	if conf.IsDefaultGW {
-		conf.IsGW = true
+	if c.IsDefaultGW {
+		c.IsGW = true
 	}
 
-	if conf.HairpinMode && conf.PromiscMode {
+	if c.HairpinMode && c.PromiscMode {
 		return nil, fmt.Errorf("cannot set hairpin mode and promiscuous mode at the same time")
 	}
 
 	// 2. Enable IP forward
+	if isLayer3 {
+
+		err = ip.EnableIP4Forward()
+		if err != nil {
+			return nil, err
+		}
+		err = ip.EnableIP6Forward()
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	// 3. Create bridge
+	br, err := setupBridge(h, c)
+	if err != nil {
+		return nil, err
+	}
 
 	// 4. Set bridge IP
-
-	// 5. Set bridge UP
 
 	// 6. Set IPAM
 
 	// 7. Set NAT
 
-	return nil, nil
+	return br, nil
+}
+
+func setupBridge(h netlinksafe.Handle, c *BrConf) (*netlink.Bridge, error) {
+	vlanFiltering := c.Vlan != 0 || c.VlanTrunk != nil
+	br, err := ensureBridge(h, c.BrName, c.MTU, c.PromiscMode, vlanFiltering)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create bridge %q: %v", c.BrName, err)
+	}
+	return br, err
+}
+
+func ensureBridge(h netlinksafe.Handle, brName string, mtu int, promiscMode, vlanFiltering bool) (*netlink.Bridge, error) {
+	linkAttrs := netlink.NewLinkAttrs()
+	linkAttrs.Name = brName
+	linkAttrs.MTU = mtu
+	br := &netlink.Bridge{
+		LinkAttrs: linkAttrs,
+	}
+	if vlanFiltering {
+		br.VlanFiltering = &vlanFiltering
+	}
+
+	err := h.LinkAdd(br)
+	if err != nil && !errors.Is(err, unix.EEXIST) {
+		return nil, fmt.Errorf("could not add %q: %v", brName, err)
+	}
+
+	if promiscMode {
+		if err := h.SetPromiscOn(br); err != nil {
+			return nil, fmt.Errorf("could not set promiscuous mode on %q: %v", brName, err)
+		}
+	}
+
+	// Re-fetch link to read all attrs and if it already existed,
+	// ensure it's really a bridge with similar configuration
+	br, err = bridgeByName(h, brName)
+	if err != nil {
+		return nil, err
+	}
+
+	// we want to own the ipv6 routes for this interface
+	_, _ = sysctl.Sysctl(fmt.Sprintf("net/ipv6/conf/%s/accept_ra", brName))
+
+	if err := h.LinkSetUp(br); err != nil {
+		return nil, err
+	}
+
+	return br, nil
 }
 
 func bridgeByName(h netlinksafe.Handle, name string) (*netlink.Bridge, error) {
@@ -68,4 +212,86 @@ func bridgeByName(h netlinksafe.Handle, name string) (*netlink.Bridge, error) {
 		return nil, fmt.Errorf("%q already exists but is not a bridge", name)
 	}
 	return br, nil
+}
+
+func calcGateways(c *BrConf) (*gwInfo, *gwInfo, error) {
+	gwsV4 := &gwInfo{}
+	gwsV6 := &gwInfo{}
+	return gwsV4, gwsV6, nil
+}
+
+func loadBrConf(c *BrConf) (*BrConf, string, error) {
+	b := &BrConf{
+		BrName: defaultBrName,
+	}
+
+	if b.Vlan < 0 || b.Vlan > 4094 {
+		return nil, "", fmt.Errorf("invalid VLAN ID %d (must be between 0 and 4094)", b.Vlan)
+	}
+
+	var err error
+	b.vlans, err = collectVlanTrunk(b.VlanTrunk)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to parse vlan trunks: %v", err)
+	}
+
+	if mac := b.RuntimeConfig.Mac; mac != "" {
+		b.mac = mac
+	}
+
+	return b, b.CNIVersion, nil
+}
+
+func collectVlanTrunk(vlanTrunk []*VlanTrunk) ([]int, error) {
+	if vlanTrunk == nil {
+		return nil, nil
+	}
+
+	vlanMap := make(map[int]struct{})
+	for _, item := range vlanTrunk {
+		var minID int
+		var maxID int
+		var ID int
+
+		switch {
+		case item.MinID != nil && item.MaxID != nil:
+			minID = *item.MinID
+			if minID <= 0 || minID > 4094 {
+				return nil, errors.New("incorrect trunk minID parameter")
+			}
+			maxID = *item.MaxID
+			if maxID <= 0 || maxID > 4094 {
+				return nil, errors.New("incorrect trunk maxID parameter")
+			}
+			if maxID < minID {
+				return nil, errors.New("minID is greater than maxID in trunk parameter")
+			}
+			for v := minID; v <= maxID; v++ {
+				vlanMap[v] = struct{}{}
+			}
+		case item.MinID == nil && item.MaxID != nil:
+			return nil, errors.New("minID and maxID should be configured simultaneously, minID is missing")
+		case item.MinID != nil && item.MaxID == nil:
+			return nil, errors.New("minID and maxID should be configured simultaneously, maxID is missing")
+		}
+
+		// single vid
+		if item.ID != nil {
+			ID = *item.ID
+			if ID <= 0 || ID > 4094 {
+				return nil, errors.New("incorrect trunk id parameter")
+			}
+			vlanMap[ID] = struct{}{}
+		}
+	}
+
+	if len(vlanMap) == 0 {
+		return nil, nil
+	}
+	vlans := make([]int, 0, len(vlanMap))
+	for k := range vlanMap {
+		vlans = append(vlans, k)
+	}
+	sort.Slice(vlans, func(i int, j int) bool { return vlans[i] < vlans[j] })
+	return vlans, nil
 }
