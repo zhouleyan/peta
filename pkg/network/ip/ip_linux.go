@@ -21,6 +21,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"math/big"
 	"net"
 
 	"github.com/vishvananda/netlink"
@@ -28,6 +29,24 @@ import (
 )
 
 var ErrLinkNotFound = errors.New("link not found")
+
+// CountIPsInCIDR takes a RFC4632/RFC4291-formatted IPv4/IPv6 CIDR and
+// determines how many IP addresses reside within that CIDR.
+// The first and the last (base and broadcast) IPs are excluded.
+//
+// Returns 0 if the input CIDR cannot be parsed.
+func CountIPsInCIDR(ipNet *net.IPNet) *big.Int {
+	subnet, size := ipNet.Mask.Size()
+	if subnet == size {
+		return big.NewInt(0)
+	}
+	return big.NewInt(0).
+		Sub(
+			big.NewInt(2).Exp(big.NewInt(2),
+				big.NewInt(int64(size-subnet)), nil),
+			big.NewInt(2),
+		)
+}
 
 // DelLinkByName removes an interface link
 func DelLinkByName(h netlinksafe.Handle, ifName string) error {

@@ -23,6 +23,8 @@ import (
 	"math/big"
 	"net"
 	"sync"
+
+	"peta.io/peta/pkg/network/ip"
 )
 
 var (
@@ -143,8 +145,8 @@ func (r *Range) Release(ip net.IP) {
 // ForEach calls the provided function for each allocated IP.
 func (r *Range) ForEach(fn func(net.IP)) {
 	r.alloc.ForEach(func(offset int) {
-		ip, _ := GetIndexedIP(r.net, offset+1) // +1 because Range doesn't store IP 0
-		fn(ip)
+		nip, _ := GetIndexedIP(r.net, offset+1) // +1 because Range doesn't store IP 0
+		fn(nip)
 	})
 }
 
@@ -218,11 +220,11 @@ func RangeSize(subnet *net.IPNet) int64 {
 
 // GetIndexedIP returns a net.IP that is subnet.IP + index in the contiguous IP space.
 func GetIndexedIP(subnet *net.IPNet, index int) (net.IP, error) {
-	ip := addIPOffset(bigForIP(subnet.IP), index)
-	if !subnet.Contains(ip) {
+	nip := addIPOffset(bigForIP(subnet.IP), index)
+	if !subnet.Contains(nip) {
 		return nil, fmt.Errorf("can't generate IP with index %d from subnet. subnet too small. subnet: %q", index, subnet)
 	}
-	return ip, nil
+	return nip, nil
 }
 
 // bigForIP creates a big.Int based on the provided net.IP
@@ -285,6 +287,30 @@ type Allocator interface {
 	// Allocate allocates a specific IP or fails
 	Allocate(ip net.IP, owner string, pool Pool) (*AllocationResult, error)
 
+	// AllocateWithoutSyncUpstream allocates a specific IP without syncing
+	// upstream or fails
+	AllocateWithoutSyncUpstream(ip net.IP, owner string, pool Pool) (*AllocationResult, error)
+
+	// AllocateNext allocates the next available IP or fails if no more IPs
+	// are available
+	AllocateNext(owner string, pool Pool) (*AllocationResult, error)
+
+	// AllocateNextWithoutSyncUpstream allocates the next available IP without syncing
+	// upstream or fails if no more IPs are available
+	AllocateNextWithoutSyncUpstream(owner string, pool Pool) (*AllocationResult, error)
+
+	// Dump returns a map of all allocated IPs per pool with the IP represented as key in the map.
+	// Dump must also provide a status one-liner to represent the overall status, e.g.
+	// number of IPs allocated and overall health information if available.
+	Dump() (map[Pool]map[string]string, string)
+
+	// Capacity returns the total IPAM allocator capacity (not the current
+	// available).
+	Capacity() uint64
+
+	// RestoreFinished marks the status of restoration as done
+	RestoreFinished()
+
 	// Release releases a previously allocated IP or fails
 	Release(ip net.IP, pool Pool) error
 }
@@ -294,10 +320,10 @@ type hostScopeAllocator struct {
 	mutex sync.RWMutex
 
 	allocCIDR *net.IPNet
-	allocator Allocator
+	allocator *Range
 }
 
-func newHostScopeAllocator(family Family) *hostScopeAllocator {
+func newHostScopeAllocator(n *net.IPNet) Allocator {
 
 	allocator := &hostScopeAllocator{}
 
@@ -308,6 +334,79 @@ func newHostScopeAllocator(family Family) *hostScopeAllocator {
 // allocate it if it is available. If the IP is unavailable or already
 // allocated, an error is returned. The custom resource will be updated to
 // reflect the newly allocated IP.
-func (a *hostScopeAllocator) Allocate(ip net.IP, owner string, pool Pool) (*AllocationResult, error) {
-	return nil, nil
+func (h *hostScopeAllocator) Allocate(ip net.IP, owner string, pool Pool) (*AllocationResult, error) {
+	if err := h.allocator.Allocate(ip); err != nil {
+		return nil, err
+	}
+
+	return &AllocationResult{IP: ip}, nil
+}
+
+func (h *hostScopeAllocator) AllocateWithoutSyncUpstream(ip net.IP, owner string, pool Pool) (*AllocationResult, error) {
+	if err := h.allocator.Allocate(ip); err != nil {
+		return nil, err
+	}
+
+	return &AllocationResult{IP: ip}, nil
+}
+
+func (h *hostScopeAllocator) Release(ip net.IP, pool Pool) error {
+	h.allocator.Release(ip)
+	return nil
+}
+
+func (h *hostScopeAllocator) AllocateNext(owner string, pool Pool) (*AllocationResult, error) {
+	nip, err := h.allocator.AllocateNext()
+	if err != nil {
+		return nil, err
+	}
+
+	return &AllocationResult{IP: nip}, nil
+}
+
+func (h *hostScopeAllocator) AllocateNextWithoutSyncUpstream(owner string, pool Pool) (*AllocationResult, error) {
+	nip, err := h.allocator.AllocateNext()
+	if err != nil {
+		return nil, err
+	}
+
+	return &AllocationResult{IP: nip}, nil
+}
+
+func (h *hostScopeAllocator) Dump() (map[Pool]map[string]string, string) {
+	var origIP *big.Int
+	alloc := map[string]string{}
+	_, data, err := h.allocator.Snapshot()
+	if err != nil {
+		return nil, "Unable to get a snapshot of the allocator"
+	}
+	if h.allocCIDR.IP.To4() != nil {
+		origIP = big.NewInt(0).SetBytes(h.allocCIDR.IP.To4())
+	} else {
+		origIP = big.NewInt(0).SetBytes(h.allocCIDR.IP.To16())
+	}
+	bits := big.NewInt(0).SetBytes(data)
+	for i := range bits.BitLen() {
+		if bits.Bit(i) != 0 {
+			ipStr := net.IP(big.NewInt(0).Add(origIP, big.NewInt(int64(uint(i+1)))).Bytes()).String()
+			alloc[ipStr] = ""
+		}
+	}
+
+	maxIPs := ip.CountIPsInCIDR(h.allocCIDR)
+	status := fmt.Sprintf("%d/%s allocated from %s", len(alloc), maxIPs.String(), h.allocCIDR.String())
+
+	return map[Pool]map[string]string{PoolDefault(): alloc}, status
+}
+
+func (h *hostScopeAllocator) Capacity() uint64 {
+	return ip.CountIPsInCIDR(h.allocCIDR).Uint64()
+}
+
+// RestoreFinished marks the status of restoration as done
+func (h *hostScopeAllocator) RestoreFinished() {}
+
+// PoolDefault returns the default pool
+func PoolDefault() Pool {
+	return Pool("host-scope")
 }

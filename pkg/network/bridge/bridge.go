@@ -148,10 +148,13 @@ func SetupBridge(h netlinksafe.Handle, c *BrConf) (*netlink.Bridge, error) {
 
 	// 4. Set IPAM
 	if isLayer3 {
-		err = ipam.Add(&c.IPAM.Spec)
+		err = ipam.Add(&c.IPAM.IPAMSpec)
 		if err != nil {
+			// TODO
+
 			return nil, err
 		}
+
 	}
 
 	// 4. Set bridge IP
@@ -209,6 +212,50 @@ func ensureBridge(h netlinksafe.Handle, brName string, mtu int, promiscMode, vla
 	}
 
 	return br, nil
+}
+
+func ensureVlanInterface(h netlinksafe.Handle, br *netlink.Bridge, vlanID int, preserveDefaultVlan bool) (netlink.Link, error) {
+	name := fmt.Sprintf("%s.%d", br.Name, vlanID)
+
+	brGatewayVeth, err := h.LinkByName(name)
+	if err != nil {
+		if !errors.As(err, &netlink.LinkNotFoundError{}) || err.Error() != "link not found" {
+			return nil, fmt.Errorf("could not lookup vlan-interface %q: %v", name, err)
+		}
+
+		vlan, err := setupVlan(h, br, name, br.MTU, false, vlanID, nil, preserveDefaultVlan, "", false)
+		if err != nil {
+			return nil, fmt.Errorf("could not setup vlan-interface %q: %v", name, err)
+		}
+
+		brGatewayVeth, err = h.LinkByName(vlan.Name)
+		if err != nil {
+			return nil, fmt.Errorf("could not lookup vlan-interface %q: %v", vlan.Name, err)
+		}
+
+		err = h.LinkSetUp(brGatewayVeth)
+		if err != nil {
+			return nil, fmt.Errorf("could not set vlan-interface %q: %v", vlan.Name, err)
+		}
+	}
+	return brGatewayVeth, nil
+}
+
+func setupVlan(
+	h netlinksafe.Handle,
+	br *netlink.Bridge,
+	ifName string,
+	mtu int,
+	harpinMode bool,
+	vlanID int,
+	vlans []int,
+	preserveDefaultVlan bool,
+	mac string,
+	portIsolation bool,
+) (*netlink.Vlan, error) {
+	// ifName: Vlan name
+	vlan := &netlink.Vlan{}
+	return vlan, nil
 }
 
 func bridgeByName(h netlinksafe.Handle, name string) (*netlink.Bridge, error) {
