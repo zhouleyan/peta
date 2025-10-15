@@ -292,11 +292,10 @@ func (i *IPAM) IsEmpty() bool {
 type Conf struct {
 	CNIVersion string `json:"cniVersion,omitempty" yaml:"cniVersion,omitempty"`
 
-	Name         string `json:"name,omitempty" yaml:"name,omitempty"`
-	Version      string `json:"version,omitempty" yaml:"version,omitempty"`
-	Type         string `json:"type,omitempty" yaml:"type,omitempty"`
-	Capabilities []bool `json:"capabilities,omitempty" yaml:"capabilities,omitempty"`
-	IPAM         IPAM   `json:"ipam,omitempty" yaml:"ipam,omitempty"`
+	Name         string          `json:"name,omitempty" yaml:"name,omitempty"`
+	Type         string          `json:"type,omitempty" yaml:"type,omitempty"`
+	Capabilities map[string]bool `json:"capabilities,omitempty" yaml:"capabilities,omitempty"`
+	IPAM         IPAM            `json:"ipam,omitempty" yaml:"ipam,omitempty"`
 }
 
 // Interface contains values about the created interfaces

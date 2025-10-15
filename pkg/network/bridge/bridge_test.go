@@ -21,25 +21,84 @@ import (
 	"fmt"
 	"testing"
 
+	"peta.io/peta/pkg/network"
+	"peta.io/peta/pkg/network/ip"
 	"peta.io/peta/pkg/network/netlinksafe"
 )
 
 func TestBridge(t *testing.T) {
 	h, err := netlinksafe.NewHandle()
-	if &h == nil {
-		t.Fatal("NewHandle failed")
-	}
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer h.Close()
 
-	t.Run("bridgeByName", func(t *testing.T) {
+	t.Run("TestBridgeByName", func(t *testing.T) {
 		br, err := bridgeByName(h, "ens33")
 		if err != nil {
 			t.Fatal("bridgeByName failed: ", err)
 		}
 		msg := fmt.Sprintf("bridge %v", br)
 		t.Log(msg)
+	})
+
+	t.Run("TestSetupBridge", func(t *testing.T) {
+		c := &BrConf{
+			Conf: network.Conf{
+				CNIVersion:   "1.0.0",
+				Name:         "peta-cni",
+				Type:         "bridge",
+				Capabilities: make(map[string]bool),
+				IPAM: network.IPAM{
+					Type: "host-scope",
+					IPAMSpec: network.IPAMSpec{
+						PodCIDR: []string{
+							"10.2.2.0/24",
+						},
+						MinAllocate:       0,
+						MaxAllocate:       0,
+						PreAllocate:       0,
+						MaxAboveWatermark: 0,
+					},
+				},
+			},
+			BrName:                    "br0",
+			IsGW:                      false,
+			IsDefaultGW:               false,
+			ForceAddress:              false,
+			IPMasq:                    false,
+			IPMasqBackend:             nil,
+			MTU:                       1500,
+			HairpinMode:               false,
+			PromiscMode:               false,
+			Vlan:                      0,
+			VlanTrunk:                 nil,
+			PreserveDefaultVlan:       false,
+			MacSpoofChk:               false,
+			EnableDad:                 false,
+			DisableContainerInterface: false,
+			PortIsolation:             false,
+			Args: struct {
+				Cni BridgeArgs `json:"cni,omitempty" yaml:"cni,omitempty"`
+			}{},
+			RuntimeConfig: struct {
+				Mac string `json:"mac,omitempty" yaml:"mac,omitempty"`
+			}{},
+			mac:   "",
+			vlans: nil,
+		}
+
+		br, err := SetupBridge(h, c)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("bridge %v", br)
+	})
+
+	t.Run("TestRemoveBridge", func(t *testing.T) {
+		err := ip.DelLinkByName(h, "br0")
+		if err != nil {
+			t.Fatal(err)
+		}
 	})
 }

@@ -17,6 +17,8 @@
 
 package ipam
 
-func Add(n *Spec) error {
+import "peta.io/peta/pkg/network"
+
+func Add(n *network.IPAMSpec) error {
 	return nil
 }

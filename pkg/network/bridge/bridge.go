@@ -150,8 +150,6 @@ func SetupBridge(h netlinksafe.Handle, c *BrConf) (*netlink.Bridge, error) {
 	if isLayer3 {
 		err = ipam.Add(&c.IPAM.IPAMSpec)
 		if err != nil {
-			// TODO
-
 			return nil, err
 		}
 
@@ -187,8 +185,16 @@ func ensureBridge(h netlinksafe.Handle, brName string, mtu int, promiscMode, vla
 	}
 
 	err := h.LinkAdd(br)
-	if err != nil && !errors.Is(err, unix.EEXIST) {
-		return nil, fmt.Errorf("could not add %q: %v", brName, err)
+	if err != nil {
+		if errors.Is(err, unix.EEXIST) {
+			// Modify the exist bridge
+			err := h.LinkModify(br)
+			if err != nil {
+				return nil, fmt.Errorf("could not modify %q: %v", brName, err)
+			}
+		} else {
+			return nil, fmt.Errorf("could not add %q: %v", brName, err)
+		}
 	}
 
 	if promiscMode {
@@ -207,6 +213,7 @@ func ensureBridge(h netlinksafe.Handle, brName string, mtu int, promiscMode, vla
 	// we want to own the ipv6 routes for this interface
 	_, _ = sysctl.Sysctl(fmt.Sprintf("net/ipv6/conf/%s/accept_ra", brName))
 
+	// The bridge must be associated with at least one "active" physical/virtual device
 	if err := h.LinkSetUp(br); err != nil {
 		return nil, err
 	}
@@ -277,25 +284,26 @@ func calcGateways(c *BrConf) (*gwInfo, *gwInfo, error) {
 }
 
 func loadBrConf(c *BrConf) (*BrConf, string, error) {
-	b := &BrConf{
-		BrName: defaultBrName,
+
+	if c.BrName == "" {
+		c.BrName = defaultBrName
 	}
 
-	if b.Vlan < 0 || b.Vlan > 4094 {
-		return nil, "", fmt.Errorf("invalid VLAN ID %d (must be between 0 and 4094)", b.Vlan)
+	if c.Vlan < 0 || c.Vlan > 4094 {
+		return nil, "", fmt.Errorf("invalid VLAN ID %d (must be between 0 and 4094)", c.Vlan)
 	}
 
 	var err error
-	b.vlans, err = collectVlanTrunk(b.VlanTrunk)
+	c.vlans, err = collectVlanTrunk(c.VlanTrunk)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to parse vlan trunks: %v", err)
 	}
 
-	if mac := b.RuntimeConfig.Mac; mac != "" {
-		b.mac = mac
+	if mac := c.RuntimeConfig.Mac; mac != "" {
+		c.mac = mac
 	}
 
-	return b, b.CNIVersion, nil
+	return c, c.CNIVersion, nil
 }
 
 func collectVlanTrunk(vlanTrunk []*VlanTrunk) ([]int, error) {
