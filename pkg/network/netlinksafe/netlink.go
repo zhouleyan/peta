@@ -137,7 +137,7 @@ func (h Handle) AddrStrList(link netlink.Link, family int) ([]string, error) {
 	var err error
 	addresses, err := h.AddrList(link, family)
 	for _, addr := range addresses {
-		addrStrings = append(addrStrings, addr.IP.String())
+		addrStrings = append(addrStrings, addr.IPNet.String())
 	}
 	return addrStrings, err
 }

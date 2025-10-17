@@ -91,7 +91,7 @@ func setupIPMasq(ipn *net.IPNet, chain, comment string) error {
 	}
 
 	// Packets from the specific IP of this network will hit the chain
-	return ipt.AppendUnique("nat", "POSTROUTING", "-s", ipn.IP.String(), "-j", chain, "-m", "comment", "--comment", comment)
+	return ipt.AppendUnique("nat", "POSTROUTING", "-s", ipn.String(), "-j", chain, "-m", "comment", "--comment", comment)
 }
 
 // teardownIPMasqIPTables is the iptables-based implementation of TeardownIPMasqForNetworks

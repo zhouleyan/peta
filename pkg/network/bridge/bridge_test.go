@@ -19,8 +19,10 @@ package bridge
 
 import (
 	"fmt"
+	"slices"
 	"testing"
 
+	"github.com/vishvananda/netlink"
 	"peta.io/peta/pkg/network"
 	"peta.io/peta/pkg/network/ip"
 	"peta.io/peta/pkg/network/netlinksafe"
@@ -43,6 +45,7 @@ func TestBridge(t *testing.T) {
 	})
 
 	t.Run("TestSetupBridge", func(t *testing.T) {
+		IPMasqBackend := "iptables"
 		c := &BrConf{
 			Conf: network.Conf{
 				CNIVersion:   "1.0.0",
@@ -53,10 +56,7 @@ func TestBridge(t *testing.T) {
 					Type: "host-scope",
 					IPAMSpec: network.IPAMSpec{
 						PodCIDR: []string{
-							"10.1.1.160/27",
-							"10.144.1.0/24",
 							"10.20.1.0/24",
-							"10.20.3.0/24",
 						},
 						MinAllocate:       0,
 						MaxAllocate:       0,
@@ -69,8 +69,8 @@ func TestBridge(t *testing.T) {
 			IsGW:                      false,
 			IsDefaultGW:               false,
 			ForceAddress:              false,
-			IPMasq:                    false,
-			IPMasqBackend:             nil,
+			IPMasq:                    true,
+			IPMasqBackend:             &IPMasqBackend,
 			MTU:                       1500,
 			HairpinMode:               false,
 			PromiscMode:               false,
@@ -102,6 +102,33 @@ func TestBridge(t *testing.T) {
 		err := ip.DelLinkByName(h, "br0")
 		if err != nil {
 			t.Fatal(err)
+		}
+	})
+
+	t.Run("TestRemoveBridgeIPAddr", func(t *testing.T) {
+		ips := []string{
+			"10.20.1.1/24",
+			"10.20.3.1/24",
+		}
+		br, err := bridgeByName(h, "br0")
+		if err != nil {
+			t.Fatal("bridgeByName failed: ", err)
+		}
+		list, err := h.AddrStrList(br, netlink.FAMILY_V4)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, nip := range ips {
+			if slices.Contains(list, nip) {
+				addr, err := netlink.ParseAddr(nip)
+				if err != nil {
+					t.Fatal(err)
+				}
+				err = h.AddrDel(br, addr)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
 		}
 	})
 }

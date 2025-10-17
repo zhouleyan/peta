@@ -150,6 +150,7 @@ func SetupBridge(h netlinksafe.Handle, c *BrConf) (*netlink.Bridge, error) {
 	// 4. Set IPAM
 	if isLayer3 {
 		subnets := c.IPAM.IPAMSpec.PodCIDR
+		var gws []*net.IPNet
 		list, err := h.AddrStrList(br, netlink.FAMILY_V4)
 		if err != nil {
 			return nil, err
@@ -164,17 +165,22 @@ func SetupBridge(h netlinksafe.Handle, c *BrConf) (*netlink.Bridge, error) {
 				IPNet: gw,
 			}
 
-			if !slices.Contains(list, addr.IP.String()) {
+			if !slices.Contains(list, gw.String()) {
+				gws = append(gws, addr.IPNet)
 				if err := h.AddrAdd(br, addr); err != nil {
 					return nil, fmt.Errorf("error adding IP address(%s) to bridge: %v", addr.IP.String(), err)
 				}
 			}
 		}
+
+		// IP Masquerade
+		if c.IPMasq {
+			err := ip.SetupIPMasqForNetworks(c.IPMasqBackend, gws, c.Name, "", "")
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
-
-	// 6. Set IPAM
-
-	// 7. Set NAT
 
 	return br, nil
 }
