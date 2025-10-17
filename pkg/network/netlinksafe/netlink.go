@@ -125,10 +125,21 @@ func (h Handle) AddrList(link netlink.Link, family int) ([]netlink.Addr, error) 
 	var addresses []netlink.Addr
 	var err error
 	retryOnIntr(func() error {
-		addresses, err = h.AddrList(link, family)
+		addresses, err = h.Handle.AddrList(link, family)
 		return err
 	})
 	return addresses, discardErrDumpInterrupted(err)
+}
+
+// AddrStrList calls AddrList, retrying if necessary
+func (h Handle) AddrStrList(link netlink.Link, family int) ([]string, error) {
+	var addrStrings []string
+	var err error
+	addresses, err := h.AddrList(link, family)
+	for _, addr := range addresses {
+		addrStrings = append(addrStrings, addr.IP.String())
+	}
+	return addrStrings, err
 }
 
 // BridgeVlanList calls netlink.BridgeVlanList, retrying if necessary

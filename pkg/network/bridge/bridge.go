@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"net"
 	"runtime"
+	"slices"
 	"sort"
 
 	"github.com/vishvananda/netlink"
@@ -148,14 +149,28 @@ func SetupBridge(h netlinksafe.Handle, c *BrConf) (*netlink.Bridge, error) {
 
 	// 4. Set IPAM
 	if isLayer3 {
-		err = ipam.Add(&c.IPAM.IPAMSpec)
+		subnets := c.IPAM.IPAMSpec.PodCIDR
+		list, err := h.AddrStrList(br, netlink.FAMILY_V4)
 		if err != nil {
 			return nil, err
 		}
+		for _, subnet := range subnets {
+			gw, err := calcGateways(subnet)
+			if err != nil {
+				return nil, err
+			}
+			// config br ip
+			addr := &netlink.Addr{
+				IPNet: gw,
+			}
 
+			if !slices.Contains(list, addr.IP.String()) {
+				if err := h.AddrAdd(br, addr); err != nil {
+					return nil, fmt.Errorf("error adding IP address(%s) to bridge: %v", addr.IP.String(), err)
+				}
+			}
+		}
 	}
-
-	// 4. Set bridge IP
 
 	// 6. Set IPAM
 
@@ -277,10 +292,51 @@ func bridgeByName(h netlinksafe.Handle, name string) (*netlink.Bridge, error) {
 	return br, nil
 }
 
-func calcGateways(c *BrConf) (*gwInfo, *gwInfo, error) {
-	gwsV4 := &gwInfo{}
-	gwsV6 := &gwInfo{}
-	return gwsV4, gwsV6, nil
+func calcGateways(cidr string) (*net.IPNet, error) {
+	_, ipNet, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing subnet %q: %v", cidr, err)
+	}
+
+	gw, err := ipam.GetIndexedIP(ipNet, 1)
+	if err != nil {
+		return nil, fmt.Errorf("error getting gateway for subnet %q: %v", cidr, err)
+	}
+	return &net.IPNet{
+		IP:   gw,
+		Mask: ipNet.Mask,
+	}, nil
+}
+
+func addBrAddr(h netlinksafe.Handle, br *netlink.Bridge, addr net.Addr) error {
+	// Check addr exists
+	//	addr := &netlink.Addr{
+	//		IPNet: gw,
+	//	}
+	//
+	//	if err := h.AddrAdd(br, addr); err != nil {
+	//		return nil, fmt.Errorf("error adding IP address(%s) to bridge: %v", addr.IP.String(), err)
+	//	}
+	//}
+	//addresses, err := h.AddrList(br, netlink.FAMILY_V4)
+	//if err != nil {
+	//return nil, err
+	//}
+	//for _, addr := range addresses {
+	//fmt.Printf(" - %s\n", addr.String())
+	//}
+	addresses, err := h.AddrList(br, netlink.FAMILY_ALL)
+	if err != nil {
+		return fmt.Errorf("error listing addresses for bridge %q: %v", br.Name, err)
+	}
+	// addresses = [1, 2, 3, 4]
+	// bSlice = [3, 4, 5]
+	for _, a := range addresses {
+		if a.String() != addr.String() {
+
+		}
+	}
+	return nil
 }
 
 func loadBrConf(c *BrConf) (*BrConf, string, error) {

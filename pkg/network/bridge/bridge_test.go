@@ -53,7 +53,10 @@ func TestBridge(t *testing.T) {
 					Type: "host-scope",
 					IPAMSpec: network.IPAMSpec{
 						PodCIDR: []string{
-							"10.2.2.0/24",
+							"10.1.1.160/27",
+							"10.144.1.0/24",
+							"10.20.1.0/24",
+							"10.20.3.0/24",
 						},
 						MinAllocate:       0,
 						MaxAllocate:       0,
