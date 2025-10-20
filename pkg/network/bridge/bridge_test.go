@@ -24,7 +24,6 @@ import (
 
 	"github.com/vishvananda/netlink"
 	"peta.io/peta/pkg/network"
-	"peta.io/peta/pkg/network/ip"
 	"peta.io/peta/pkg/network/netlinksafe"
 )
 
@@ -35,62 +34,67 @@ func TestBridge(t *testing.T) {
 	}
 	defer h.Close()
 
+	IPMasqBackend := "iptables"
+	c := &BrConf{
+		Conf: network.Conf{
+			CNIVersion:   "1.0.0",
+			Name:         "peta-cni",
+			Type:         "bridge",
+			Capabilities: make(map[string]bool),
+			IPAM: network.IPAM{
+				Type: "host-scope",
+				IPAMSpec: network.IPAMSpec{
+					PodCIDR: []string{
+						"10.20.1.0/24",
+					},
+					MinAllocate:       0,
+					MaxAllocate:       0,
+					PreAllocate:       0,
+					MaxAboveWatermark: 0,
+				},
+			},
+		},
+		BrName:                    "br0",
+		IsGW:                      false,
+		IsDefaultGW:               false,
+		ForceAddress:              false,
+		IPMasq:                    true,
+		IPMasqBackend:             &IPMasqBackend,
+		MTU:                       1500,
+		HairpinMode:               false,
+		PromiscMode:               false,
+		Vlan:                      0,
+		VlanTrunk:                 nil,
+		PreserveDefaultVlan:       false,
+		MacSpoofChk:               false,
+		EnableDad:                 false,
+		DisableContainerInterface: false,
+		PortIsolation:             false,
+		Args: struct {
+			Cni BridgeArgs `json:"cni,omitempty" yaml:"cni,omitempty"`
+		}{},
+		RuntimeConfig: struct {
+			Mac string `json:"mac,omitempty" yaml:"mac,omitempty"`
+		}{},
+		mac:   "",
+		vlans: nil,
+	}
+
 	t.Run("TestBridgeByName", func(t *testing.T) {
-		br, err := bridgeByName(h, "ens33")
+		br, err := bridgeByName(h, "br0")
 		if err != nil {
 			t.Fatal("bridgeByName failed: ", err)
 		}
+		list, err := h.AddrStrList(br, netlink.FAMILY_ALL)
+		if err != nil {
+			t.Fatal(err)
+		}
 		msg := fmt.Sprintf("bridge %v", br)
 		t.Log(msg)
+		t.Log(list)
 	})
 
 	t.Run("TestSetupBridge", func(t *testing.T) {
-		IPMasqBackend := "iptables"
-		c := &BrConf{
-			Conf: network.Conf{
-				CNIVersion:   "1.0.0",
-				Name:         "peta-cni",
-				Type:         "bridge",
-				Capabilities: make(map[string]bool),
-				IPAM: network.IPAM{
-					Type: "host-scope",
-					IPAMSpec: network.IPAMSpec{
-						PodCIDR: []string{
-							"10.20.1.0/24",
-						},
-						MinAllocate:       0,
-						MaxAllocate:       0,
-						PreAllocate:       0,
-						MaxAboveWatermark: 0,
-					},
-				},
-			},
-			BrName:                    "br0",
-			IsGW:                      false,
-			IsDefaultGW:               false,
-			ForceAddress:              false,
-			IPMasq:                    true,
-			IPMasqBackend:             &IPMasqBackend,
-			MTU:                       1500,
-			HairpinMode:               false,
-			PromiscMode:               false,
-			Vlan:                      0,
-			VlanTrunk:                 nil,
-			PreserveDefaultVlan:       false,
-			MacSpoofChk:               false,
-			EnableDad:                 false,
-			DisableContainerInterface: false,
-			PortIsolation:             false,
-			Args: struct {
-				Cni BridgeArgs `json:"cni,omitempty" yaml:"cni,omitempty"`
-			}{},
-			RuntimeConfig: struct {
-				Mac string `json:"mac,omitempty" yaml:"mac,omitempty"`
-			}{},
-			mac:   "",
-			vlans: nil,
-		}
-
 		br, err := SetupBridge(h, c)
 		if err != nil {
 			t.Fatal(err)
@@ -99,7 +103,7 @@ func TestBridge(t *testing.T) {
 	})
 
 	t.Run("TestRemoveBridge", func(t *testing.T) {
-		err := ip.DelLinkByName(h, "br0")
+		err := RemoveBridge(h, c)
 		if err != nil {
 			t.Fatal(err)
 		}

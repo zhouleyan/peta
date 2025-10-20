@@ -19,10 +19,19 @@ package ip
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 
+	"github.com/vishvananda/netlink"
 	"peta.io/peta/pkg/network"
 )
+
+func EnableIPForward(family int) error {
+	if family == netlink.FAMILY_V4 {
+		return EnableIP4Forward()
+	}
+	return EnableIP6Forward()
+}
 
 func EnableIP4Forward() error {
 	return echo1("/proc/sys/net/ipv4/ip_forward")
@@ -53,6 +62,14 @@ func EnableForward(ips []*network.IPConfig) error {
 	return nil
 }
 
+func DisableIP6(ifName string) error {
+	return echo1(fmt.Sprintf("/proc/sys/net/ipv6/conf/%s/disable_ipv6", ifName))
+}
+
+func EnableIP6(ifName string) error {
+	return echo0(fmt.Sprintf("/proc/sys/net/ipv6/conf/%s/disable_ipv6", ifName))
+}
+
 func echo1(f string) error {
 	if content, err := os.ReadFile(f); err != nil {
 		if bytes.Equal(bytes.TrimSpace(content), []byte("1")) {
@@ -60,4 +77,13 @@ func echo1(f string) error {
 		}
 	}
 	return os.WriteFile(f, []byte("1"), 0o644)
+}
+
+func echo0(f string) error {
+	if content, err := os.ReadFile(f); err != nil {
+		if bytes.Equal(bytes.TrimSpace(content), []byte("0")) {
+			return nil
+		}
+	}
+	return os.WriteFile(f, []byte("0"), 0o644)
 }

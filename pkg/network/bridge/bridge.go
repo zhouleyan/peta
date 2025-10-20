@@ -113,7 +113,7 @@ func SetupBridge(h netlinksafe.Handle, c *BrConf) (*netlink.Bridge, error) {
 	if err != nil {
 		return nil, err
 	}
-	// 1. Check config
+
 	isLayer3 := c.IPAM.Type != ""
 
 	if isLayer3 && c.DisableContainerInterface {
@@ -128,7 +128,7 @@ func SetupBridge(h netlinksafe.Handle, c *BrConf) (*netlink.Bridge, error) {
 		return nil, fmt.Errorf("cannot set hairpin mode and promiscuous mode at the same time")
 	}
 
-	// 2. Enable IP forward
+	// Enable IP forward
 	if isLayer3 {
 
 		err = ip.EnableIP4Forward()
@@ -141,17 +141,20 @@ func SetupBridge(h netlinksafe.Handle, c *BrConf) (*netlink.Bridge, error) {
 		}
 	}
 
-	// 3. Create bridge
+	// Create bridge
 	br, err := setupBridge(h, c)
 	if err != nil {
 		return nil, err
 	}
+	if err = ip.EnableIP6(c.BrName); err != nil {
+		return nil, err
+	}
 
-	// 4. Set IPAM
+	// Set IPAM
 	if isLayer3 {
 		subnets := c.IPAM.IPAMSpec.PodCIDR
 		var gws []*net.IPNet
-		list, err := h.AddrStrList(br, netlink.FAMILY_V4)
+		list, err := h.AddrStrList(br, netlink.FAMILY_ALL)
 		if err != nil {
 			return nil, err
 		}
@@ -183,6 +186,25 @@ func SetupBridge(h netlinksafe.Handle, c *BrConf) (*netlink.Bridge, error) {
 	}
 
 	return br, nil
+}
+
+func RemoveBridge(h netlinksafe.Handle, c *BrConf) error {
+	isLayer3 := c.IPAM.Type != ""
+
+	// Remove bridge
+	ipNs, err := ip.DelLinkByNameAddr(h, c.BrName)
+	if err != nil && !errors.Is(err, ip.ErrLinkNotFound) {
+		return err
+	}
+
+	// Remove IP masquerade rules
+	if isLayer3 && c.IPMasq {
+		if err := ip.TeardownIPMasqForNetworks(ipNs, c.Name, "", ""); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func setupBridge(h netlinksafe.Handle, c *BrConf) (*netlink.Bridge, error) {
@@ -218,6 +240,10 @@ func ensureBridge(h netlinksafe.Handle, brName string, mtu int, promiscMode, vla
 		}
 	}
 
+	if err = ip.DisableIP6(brName); err != nil {
+		return nil, err
+	}
+
 	if promiscMode {
 		if err := h.SetPromiscOn(br); err != nil {
 			return nil, fmt.Errorf("could not set promiscuous mode on %q: %v", brName, err)
@@ -236,6 +262,10 @@ func ensureBridge(h netlinksafe.Handle, brName string, mtu int, promiscMode, vla
 
 	// The bridge must be associated with at least one "active" physical/virtual device
 	if err := h.LinkSetUp(br); err != nil {
+		return nil, err
+	}
+
+	if err = ip.EnableIP6(brName); err != nil {
 		return nil, err
 	}
 
@@ -312,37 +342,6 @@ func calcGateways(cidr string) (*net.IPNet, error) {
 		IP:   gw,
 		Mask: ipNet.Mask,
 	}, nil
-}
-
-func addBrAddr(h netlinksafe.Handle, br *netlink.Bridge, addr net.Addr) error {
-	// Check addr exists
-	//	addr := &netlink.Addr{
-	//		IPNet: gw,
-	//	}
-	//
-	//	if err := h.AddrAdd(br, addr); err != nil {
-	//		return nil, fmt.Errorf("error adding IP address(%s) to bridge: %v", addr.IP.String(), err)
-	//	}
-	//}
-	//addresses, err := h.AddrList(br, netlink.FAMILY_V4)
-	//if err != nil {
-	//return nil, err
-	//}
-	//for _, addr := range addresses {
-	//fmt.Printf(" - %s\n", addr.String())
-	//}
-	addresses, err := h.AddrList(br, netlink.FAMILY_ALL)
-	if err != nil {
-		return fmt.Errorf("error listing addresses for bridge %q: %v", br.Name, err)
-	}
-	// addresses = [1, 2, 3, 4]
-	// bSlice = [3, 4, 5]
-	for _, a := range addresses {
-		if a.String() != addr.String() {
-
-		}
-	}
-	return nil
 }
 
 func loadBrConf(c *BrConf) (*BrConf, string, error) {
