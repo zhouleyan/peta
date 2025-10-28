@@ -101,11 +101,24 @@ func teardownIPMasqIPTables(ipNs []*net.IPNet, network, _, id string) error {
 	comment := iputils.FormatComment(network, id)
 
 	var errs []string
+	var ipt *iptables.IPTables
 	for _, ipn := range ipNs {
-		err := TeardownIPMasq(ipn, chain, comment)
+		var err error
+		ipt, err = getIPTables(ipt, ipn)
+		if err != nil {
+			err = fmt.Errorf("failed to locate iptables: %v", err)
+			errs = append(errs, err.Error())
+		}
+		err = TeardownIPMasq(ipt, ipn, chain, comment)
 		if err != nil {
 			errs = append(errs, err.Error())
 		}
+	}
+
+	err := ipt.DeleteChain("nat", chain)
+	if err != nil && !isNotExist(err) {
+		err = fmt.Errorf("failed to delete nat chain: %v", err)
+		errs = append(errs, err.Error())
 	}
 
 	if errs == nil {
@@ -115,10 +128,30 @@ func teardownIPMasqIPTables(ipNs []*net.IPNet, network, _, id string) error {
 }
 
 // TeardownIPMasq undoes the effects of SetupIPMasq.
-func TeardownIPMasq(ipn *net.IPNet, chain string, comment string) error {
+func TeardownIPMasq(ipt *iptables.IPTables, ipn *net.IPNet, chain string, comment string) error {
+
+	err := ipt.Delete("nat", "POSTROUTING", "-s", ipn.IP.String(), "-j", chain, "-m", "comment", "--comment", comment)
+	if err != nil && !isNotExist(err) {
+		return fmt.Errorf("failed to delete nat chain rulespecs: %v", err)
+	}
+
+	// for downward compatibility
+	err = ipt.Delete("nat", "POSTROUTING", "-s", ipn.String(), "-j", chain, "-m", "comment", "--comment", comment)
+	if err != nil && !isNotExist(err) {
+		return fmt.Errorf("failed to delete nat chain(downward compatibility) rulespecs: %v", err)
+	}
+
+	err = ipt.ClearChain("nat", chain)
+	if err != nil && !isNotExist(err) {
+		return fmt.Errorf("failed to clear nat chain: %v", err)
+	}
+
+	return nil
+}
+
+func getIPTables(ipt *iptables.IPTables, ipn *net.IPNet) (*iptables.IPTables, error) {
 	isV6 := ipn.IP.To4() == nil
 
-	var ipt *iptables.IPTables
 	var err error
 
 	if isV6 {
@@ -127,31 +160,9 @@ func TeardownIPMasq(ipn *net.IPNet, chain string, comment string) error {
 		ipt, err = iptables.NewWithProtocol(iptables.ProtocolIPv4)
 	}
 	if err != nil {
-		return fmt.Errorf("failed to locate iptables: %v", err)
+		return nil, fmt.Errorf("failed to locate iptables: %v", err)
 	}
-
-	err = ipt.Delete("nat", "POSTROUTING", "-s", ipn.IP.String(), "-j", chain, "-m", "comment", "--comment", comment)
-	if err != nil && !isNotExist(err) {
-		return err
-	}
-
-	// for downward compatibility
-	err = ipt.Delete("nat", "POSTROUTING", "-s", ipn.String(), "-j", chain, "-m", "comment", "--comment", comment)
-	if err != nil && !isNotExist(err) {
-		return err
-	}
-
-	err = ipt.ClearChain("nat", chain)
-	if err != nil && !isNotExist(err) {
-		return err
-	}
-
-	err = ipt.DeleteChain("nat", chain)
-	if err != nil && !isNotExist(err) {
-		return err
-	}
-
-	return nil
+	return ipt, nil
 }
 
 // isNotExist returns true if the error is from iptables indicating

@@ -46,6 +46,8 @@ func TestBridge(t *testing.T) {
 				IPAMSpec: network.IPAMSpec{
 					PodCIDR: []string{
 						"10.20.1.0/24",
+						"10.20.2.0/24",
+						"10.20.3.0/24",
 					},
 					MinAllocate:       0,
 					MaxAllocate:       0,
@@ -71,7 +73,7 @@ func TestBridge(t *testing.T) {
 		DisableContainerInterface: false,
 		PortIsolation:             false,
 		Args: struct {
-			Cni BridgeArgs `json:"cni,omitempty" yaml:"cni,omitempty"`
+			Cni Args `json:"cni,omitempty" yaml:"cni,omitempty"`
 		}{},
 		RuntimeConfig: struct {
 			Mac string `json:"mac,omitempty" yaml:"mac,omitempty"`

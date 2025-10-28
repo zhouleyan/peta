@@ -38,23 +38,9 @@ const defaultBrName = "br0"
 
 func init() {
 	// this ensures that main runs only on main thread (thread group leader).
-	// since namespace ops (unshare, setns) are done for a single thread, we
+	// since namespace ops (unshare, set ns) are done for a single thread, we
 	// must ensure that the goroutine does not jump from OS thread to thread
 	runtime.LockOSThread()
-}
-
-type gwInfo struct {
-	gws               []net.IPNet
-	family            int
-	defaultRouteFound bool
-}
-
-type cniBridgeIf struct {
-	Name        string
-	ifIndex     int
-	peerIndex   int
-	masterIndex int
-	found       bool
 }
 
 type VlanTrunk struct {
@@ -63,7 +49,7 @@ type VlanTrunk struct {
 	ID    *int `json:"id,omitempty" yaml:"id,omitempty"`
 }
 
-type BridgeArgs struct {
+type Args struct {
 	Mac string `json:"mac,omitempty" yaml:"mac,omitempty"`
 }
 
@@ -97,7 +83,7 @@ type BrConf struct {
 	PortIsolation             bool `json:"portIsolation,omitempty" yaml:"portIsolation,omitempty"`
 
 	Args struct {
-		Cni BridgeArgs `json:"cni,omitempty" yaml:"cni,omitempty"`
+		Cni Args `json:"cni,omitempty" yaml:"cni,omitempty"`
 	} `json:"args,omitempty" yaml:"args,omitempty"`
 	RuntimeConfig struct {
 		Mac string `json:"mac,omitempty" yaml:"mac,omitempty"`
@@ -144,9 +130,6 @@ func SetupBridge(h netlinksafe.Handle, c *BrConf) (*netlink.Bridge, error) {
 	// Create bridge
 	br, err := setupBridge(h, c)
 	if err != nil {
-		return nil, err
-	}
-	if err = ip.EnableIP6(c.BrName); err != nil {
 		return nil, err
 	}
 
@@ -240,10 +223,6 @@ func ensureBridge(h netlinksafe.Handle, brName string, mtu int, promiscMode, vla
 		}
 	}
 
-	if err = ip.DisableIP6(brName); err != nil {
-		return nil, err
-	}
-
 	if promiscMode {
 		if err := h.SetPromiscOn(br); err != nil {
 			return nil, fmt.Errorf("could not set promiscuous mode on %q: %v", brName, err)
@@ -265,55 +244,7 @@ func ensureBridge(h netlinksafe.Handle, brName string, mtu int, promiscMode, vla
 		return nil, err
 	}
 
-	if err = ip.EnableIP6(brName); err != nil {
-		return nil, err
-	}
-
 	return br, nil
-}
-
-func ensureVlanInterface(h netlinksafe.Handle, br *netlink.Bridge, vlanID int, preserveDefaultVlan bool) (netlink.Link, error) {
-	name := fmt.Sprintf("%s.%d", br.Name, vlanID)
-
-	brGatewayVeth, err := h.LinkByName(name)
-	if err != nil {
-		if !errors.As(err, &netlink.LinkNotFoundError{}) || err.Error() != "link not found" {
-			return nil, fmt.Errorf("could not lookup vlan-interface %q: %v", name, err)
-		}
-
-		vlan, err := setupVlan(h, br, name, br.MTU, false, vlanID, nil, preserveDefaultVlan, "", false)
-		if err != nil {
-			return nil, fmt.Errorf("could not setup vlan-interface %q: %v", name, err)
-		}
-
-		brGatewayVeth, err = h.LinkByName(vlan.Name)
-		if err != nil {
-			return nil, fmt.Errorf("could not lookup vlan-interface %q: %v", vlan.Name, err)
-		}
-
-		err = h.LinkSetUp(brGatewayVeth)
-		if err != nil {
-			return nil, fmt.Errorf("could not set vlan-interface %q: %v", vlan.Name, err)
-		}
-	}
-	return brGatewayVeth, nil
-}
-
-func setupVlan(
-	h netlinksafe.Handle,
-	br *netlink.Bridge,
-	ifName string,
-	mtu int,
-	harpinMode bool,
-	vlanID int,
-	vlans []int,
-	preserveDefaultVlan bool,
-	mac string,
-	portIsolation bool,
-) (*netlink.Vlan, error) {
-	// ifName: Vlan name
-	vlan := &netlink.Vlan{}
-	return vlan, nil
 }
 
 func bridgeByName(h netlinksafe.Handle, name string) (*netlink.Bridge, error) {
