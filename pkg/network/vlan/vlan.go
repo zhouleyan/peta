@@ -59,7 +59,7 @@ func CreateVlan(h netlinksafe.Handle, ifName string, c *Conf) (*netlink.Vlan, er
 
 	m, err = h.LinkByName(c.Master)
 	if err != nil {
-		return nil, fmt.Errorf("failed to lookup master %q: %v", c.Master, err)
+		return nil, fmt.Errorf("failed to lookup master %q: %w", c.Master, err)
 	}
 
 	// due to kernel bug we have to create with tmpName, or it might
@@ -81,7 +81,7 @@ func CreateVlan(h netlinksafe.Handle, ifName string, c *Conf) (*netlink.Vlan, er
 
 	err = h.LinkAdd(v)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create vlan: %v", err)
+		return nil, fmt.Errorf("failed to create vlan: %w", err)
 	}
 
 	return v, err

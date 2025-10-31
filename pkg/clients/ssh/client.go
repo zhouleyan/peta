@@ -18,6 +18,7 @@
 package ssh
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -25,7 +26,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
 	"peta.io/peta/pkg/log"
 	"peta.io/peta/pkg/utils/iputils"
@@ -126,7 +126,7 @@ func (c *Client) session() (*ssh.Session, error) {
 	}
 
 	log.Infof("failed to set LANG to en_US.UTF-8. (Error: %v)", err)
-	log.Errorf("failed to set LANG to en_US.UTF-8. (Error: %v)", errors.Errorf("123455"))
+	log.Errorf("failed to set LANG to en_US.UTF-8. (Error: %v)", errors.New("12345"))
 
 	if err := session.Setenv("LANG", "en_US.UTF-8"); err != nil {
 		log.Infof("failed to set LANG to en_US.UTF-8. (Error: %v)", err)
@@ -180,7 +180,8 @@ func createConfig(
 	}
 
 	if !iputils.IsValidIP(addr) && !iputils.IsValidDomain(addr) {
-		return nil, errors.Errorf("address is an invalid ip or domain address: %s", addr)
+
+		return nil, fmt.Errorf("address is an invalid ip or domain address: %s", addr)
 	}
 
 	if len(passwd) == 0 && len(privateKey) == 0 && len(privateKeyRaw) == 0 {
@@ -206,7 +207,7 @@ func createConfig(
 	if len(privateKey) > 0 {
 		keyAuth, err := Key(privateKey, "")
 		if err != nil {
-			return nil, errors.Wrap(err, "private key parse failed")
+			return nil, fmt.Errorf("private key parse failed: %w", err)
 		}
 		auth = append(auth, keyAuth)
 	}
@@ -214,7 +215,7 @@ func createConfig(
 	if len(privateKey) == 0 && len(privateKeyRaw) > 0 {
 		keyAuth, err := RawKey(privateKey, "")
 		if err != nil {
-			return nil, errors.Wrap(err, "private key parse failed")
+			return nil, fmt.Errorf("private key parse failed: %w", err)
 		}
 		auth = append(auth, keyAuth)
 	}

@@ -25,7 +25,6 @@ import (
 
 	"github.com/emicklei/go-restful/v3"
 	"github.com/gobuffalo/pop/v6"
-	"github.com/pkg/errors"
 	"peta.io/peta/pkg/apis/healthz"
 	"peta.io/peta/pkg/log"
 	"peta.io/peta/pkg/utils/osutils"
@@ -42,7 +41,7 @@ var _ Storage = &persister{}
 var defaultInitialPing = func(p *persister) error {
 	if err := resilience.Retry(5*time.Second, 1*time.Minute, p.Ping); err != nil {
 		log.Errorf("could not ping database: %v", err)
-		return errors.WithStack(err)
+		return err
 	}
 	return nil
 }

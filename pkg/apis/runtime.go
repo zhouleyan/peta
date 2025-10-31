@@ -25,8 +25,9 @@ import (
 	"sync"
 	"time"
 
+	"errors"
+
 	"github.com/emicklei/go-restful/v3"
-	"github.com/pkg/errors"
 	"peta.io/peta/pkg/log"
 )
 

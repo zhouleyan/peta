@@ -56,11 +56,11 @@ func DelLinkByName(h netlinksafe.Handle, ifName string) error {
 		if errors.As(err, &linkNotFoundError) {
 			return ErrLinkNotFound
 		}
-		return fmt.Errorf("failed to lookup %q: %v", ifName, err)
+		return fmt.Errorf("failed to lookup %q: %w", ifName, err)
 	}
 
 	if err = h.LinkDel(l); err != nil {
-		return fmt.Errorf("failed to delete link %q: %v", l.Attrs().Name, err)
+		return fmt.Errorf("failed to delete link %q: %w", l.Attrs().Name, err)
 	}
 	return nil
 }
@@ -73,16 +73,16 @@ func DelLinkByNameAddr(h netlinksafe.Handle, ifName string) ([]*net.IPNet, error
 		if errors.As(err, &linkNotFoundError) {
 			return nil, ErrLinkNotFound
 		}
-		return nil, fmt.Errorf("failed to lookup %q: %v", ifName, err)
+		return nil, fmt.Errorf("failed to lookup %q: %w", ifName, err)
 	}
 
 	addresses, err := h.AddrList(l, netlink.FAMILY_ALL)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get IP addresses for %q: %v", ifName, err)
+		return nil, fmt.Errorf("failed to get IP addresses for %q: %w", ifName, err)
 	}
 
 	if err = h.LinkDel(l); err != nil {
-		return nil, fmt.Errorf("failed to delete link %q: %v", l.Attrs().Name, err)
+		return nil, fmt.Errorf("failed to delete link %q: %w", l.Attrs().Name, err)
 	}
 
 	var out []*net.IPNet
@@ -100,7 +100,7 @@ func RandomVethName() (string, error) {
 	entropy := make([]byte, 4)
 	_, err := rand.Read(entropy)
 	if err != nil {
-		return "", fmt.Errorf("failed to generate random veth name: %v", err)
+		return "", fmt.Errorf("failed to generate random veth name: %w", err)
 	}
 
 	// NetworkManager (recent versions) will ignore veth devices that start with "veth"

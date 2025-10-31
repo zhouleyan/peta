@@ -19,6 +19,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -29,7 +30,6 @@ import (
 	"github.com/go-openapi/spec"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/validate"
-	"github.com/pkg/errors"
 	"peta.io/peta/pkg/apis"
 	configv1alpha2 "peta.io/peta/pkg/apis/config/v1alpha2"
 	"peta.io/peta/pkg/apis/healthz"

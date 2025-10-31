@@ -18,10 +18,10 @@
 package pg
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"peta.io/peta/pkg/log"
 	"peta.io/peta/pkg/types"
@@ -63,8 +63,9 @@ func loadFromBlueprint(blueprint string) (b *types.Blueprint, err error) {
 
 	_, err = os.Open(fp)
 	if err != nil {
-		log.Errorln(errors.Wrap(err, "unable to open the given blueprint file"))
-		return nil, errors.Wrap(err, "unable to open the given blueprint file")
+		err = fmt.Errorf("unable to open the given blueprint file: %w", err)
+		log.Errorln(err)
+		return nil, err
 	}
 
 	return b, err

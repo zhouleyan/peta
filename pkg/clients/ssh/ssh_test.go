@@ -20,8 +20,6 @@ package ssh
 import (
 	"fmt"
 	"testing"
-
-	"github.com/pkg/errors"
 )
 
 func TestSSHRun(t *testing.T) {
@@ -38,7 +36,7 @@ func TestSSHRun(t *testing.T) {
 		false,
 	)
 	if err != nil {
-		t.Fatal(errors.Wrap(err, "connect error"))
+		t.Fatal(fmt.Errorf("connect error: %w", err))
 	}
 
 	output, err := client.Run("ls -al")

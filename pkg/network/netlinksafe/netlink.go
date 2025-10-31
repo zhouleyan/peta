@@ -20,7 +20,8 @@ package netlinksafe
 import (
 	"log"
 
-	"github.com/pkg/errors"
+	"errors"
+
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netlink/nl"
 )
@@ -57,7 +58,7 @@ func retryOnIntr(f func() error) {
 
 func discardErrDumpInterrupted(err error) error {
 	if errors.Is(err, netlink.ErrDumpInterrupted) {
-		log.Printf("discarding ErrDumpInterrupted: %+v", errors.WithStack(err))
+		log.Printf("discarding ErrDumpInterrupted: %+v", err)
 		return nil
 	}
 	return err

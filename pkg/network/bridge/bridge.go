@@ -154,7 +154,7 @@ func SetupBridge(h netlinksafe.Handle, c *BrConf) (*netlink.Bridge, error) {
 			if !slices.Contains(list, gw.String()) {
 				gws = append(gws, addr.IPNet)
 				if err := h.AddrAdd(br, addr); err != nil {
-					return nil, fmt.Errorf("error adding IP address(%s) to bridge: %v", addr.IP.String(), err)
+					return nil, fmt.Errorf("error adding IP address(%s) to bridge: %w", addr.IP.String(), err)
 				}
 			}
 		}
@@ -194,7 +194,7 @@ func setupBridge(h netlinksafe.Handle, c *BrConf) (*netlink.Bridge, error) {
 	vlanFiltering := c.Vlan != 0 || c.VlanTrunk != nil
 	br, err := ensureBridge(h, c.BrName, c.MTU, c.PromiscMode, vlanFiltering)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create bridge %q: %v", c.BrName, err)
+		return nil, fmt.Errorf("failed to create bridge %q: %w", c.BrName, err)
 	}
 	return br, err
 }
@@ -216,16 +216,16 @@ func ensureBridge(h netlinksafe.Handle, brName string, mtu int, promiscMode, vla
 			// Modify the exist bridge
 			err := h.LinkModify(br)
 			if err != nil {
-				return nil, fmt.Errorf("could not modify %q: %v", brName, err)
+				return nil, fmt.Errorf("could not modify %q: %w", brName, err)
 			}
 		} else {
-			return nil, fmt.Errorf("could not add %q: %v", brName, err)
+			return nil, fmt.Errorf("could not add %q: %w", brName, err)
 		}
 	}
 
 	if promiscMode {
 		if err := h.SetPromiscOn(br); err != nil {
-			return nil, fmt.Errorf("could not set promiscuous mode on %q: %v", brName, err)
+			return nil, fmt.Errorf("could not set promiscuous mode on %q: %w", brName, err)
 		}
 	}
 
@@ -262,12 +262,12 @@ func bridgeByName(h netlinksafe.Handle, name string) (*netlink.Bridge, error) {
 func calcGateways(cidr string) (*net.IPNet, error) {
 	_, ipNet, err := net.ParseCIDR(cidr)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing subnet %q: %v", cidr, err)
+		return nil, fmt.Errorf("error parsing subnet %q: %w", cidr, err)
 	}
 
 	gw, err := ipam.GetIndexedIP(ipNet, 1)
 	if err != nil {
-		return nil, fmt.Errorf("error getting gateway for subnet %q: %v", cidr, err)
+		return nil, fmt.Errorf("error getting gateway for subnet %q: %w", cidr, err)
 	}
 	return &net.IPNet{
 		IP:   gw,
@@ -288,7 +288,7 @@ func loadBrConf(c *BrConf) (*BrConf, string, error) {
 	var err error
 	c.vlans, err = collectVlanTrunk(c.VlanTrunk)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to parse vlan trunks: %v", err)
+		return nil, "", fmt.Errorf("failed to parse vlan trunks: %w", err)
 	}
 
 	if mac := c.RuntimeConfig.Mac; mac != "" {

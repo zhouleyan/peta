@@ -31,7 +31,7 @@ func WithRequestInfo(next http.Handler, resolver request.InfoResolver) http.Hand
 		ctx := req.Context()
 		info, err := resolver.NewRequestInfo(req)
 		if err != nil {
-			apis.InternalError(w, req, fmt.Errorf("failed to crate request info: %v", err))
+			apis.InternalError(w, req, fmt.Errorf("failed to crate request info: %w", err))
 		}
 
 		*req = *req.WithContext(request.WithRequestInfo(ctx, info))

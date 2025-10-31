@@ -57,14 +57,14 @@ func setupIPMasq(ipn *net.IPNet, chain, comment string) error {
 		multicastNet = "224.0.0.0/4"
 	}
 	if err != nil {
-		return fmt.Errorf("failed to locate iptables: %v", err)
+		return fmt.Errorf("failed to locate iptables: %w", err)
 	}
 
 	// Create chan if it doesn't exist
 	exists := false
 	chains, err := ipt.ListChains("nat")
 	if err != nil {
-		return fmt.Errorf("failed to list nat chains: %v", err)
+		return fmt.Errorf("failed to list nat chains: %w", err)
 	}
 
 	for _, ch := range chains {
@@ -75,7 +75,7 @@ func setupIPMasq(ipn *net.IPNet, chain, comment string) error {
 	}
 	if !exists {
 		if err := ipt.NewChain("nat", chain); err != nil {
-			return fmt.Errorf("failed to create nat chain: %v", err)
+			return fmt.Errorf("failed to create nat chain: %w", err)
 		}
 	}
 
@@ -106,7 +106,7 @@ func teardownIPMasqIPTables(ipNs []*net.IPNet, network, _, id string) error {
 		var err error
 		ipt, err = getIPTables(ipt, ipn)
 		if err != nil {
-			err = fmt.Errorf("failed to locate iptables: %v", err)
+			err = fmt.Errorf("failed to locate iptables: %w", err)
 			errs = append(errs, err.Error())
 		}
 		err = TeardownIPMasq(ipt, ipn, chain, comment)
@@ -117,7 +117,7 @@ func teardownIPMasqIPTables(ipNs []*net.IPNet, network, _, id string) error {
 
 	err := ipt.DeleteChain("nat", chain)
 	if err != nil && !isNotExist(err) {
-		err = fmt.Errorf("failed to delete nat chain: %v", err)
+		err = fmt.Errorf("failed to delete nat chain: %w", err)
 		errs = append(errs, err.Error())
 	}
 
@@ -132,18 +132,18 @@ func TeardownIPMasq(ipt *iptables.IPTables, ipn *net.IPNet, chain string, commen
 
 	err := ipt.Delete("nat", "POSTROUTING", "-s", ipn.IP.String(), "-j", chain, "-m", "comment", "--comment", comment)
 	if err != nil && !isNotExist(err) {
-		return fmt.Errorf("failed to delete nat chain rulespecs: %v", err)
+		return fmt.Errorf("failed to delete nat chain rulespecs: %w", err)
 	}
 
 	// for downward compatibility
 	err = ipt.Delete("nat", "POSTROUTING", "-s", ipn.String(), "-j", chain, "-m", "comment", "--comment", comment)
 	if err != nil && !isNotExist(err) {
-		return fmt.Errorf("failed to delete nat chain(downward compatibility) rulespecs: %v", err)
+		return fmt.Errorf("failed to delete nat chain(downward compatibility) rulespecs: %w", err)
 	}
 
 	err = ipt.ClearChain("nat", chain)
 	if err != nil && !isNotExist(err) {
-		return fmt.Errorf("failed to clear nat chain: %v", err)
+		return fmt.Errorf("failed to clear nat chain: %w", err)
 	}
 
 	return nil
@@ -160,7 +160,7 @@ func getIPTables(ipt *iptables.IPTables, ipn *net.IPNet) (*iptables.IPTables, er
 		ipt, err = iptables.NewWithProtocol(iptables.ProtocolIPv4)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("failed to locate iptables: %v", err)
+		return nil, fmt.Errorf("failed to locate iptables: %w", err)
 	}
 	return ipt, nil
 }

@@ -80,7 +80,7 @@ func NewAPIServer(ctx context.Context, o *options.APIServerOptions) (*APIServer,
 	var err error
 
 	if apiServer.Storage, err = persistence.New(ctx, o.DatabaseOptions); err != nil {
-		return nil, fmt.Errorf("unable to initialize storage: %v", err)
+		return nil, fmt.Errorf("unable to initialize storage: %w", err)
 	}
 
 	return apiServer, nil
