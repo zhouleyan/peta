@@ -18,14 +18,13 @@
 package apis
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"runtime"
 	"strings"
 	"sync"
 	"time"
-
-	"errors"
 
 	"github.com/emicklei/go-restful/v3"
 	"peta.io/peta/pkg/log"

@@ -18,9 +18,8 @@
 package netlinksafe
 
 import (
-	"log"
-
 	"errors"
+	"log"
 
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netlink/nl"
