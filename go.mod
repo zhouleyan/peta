@@ -1,6 +1,6 @@
 module peta.io/peta
 
-go 1.25.2
+go 1.25.4
 
 require (
 	github.com/coreos/go-iptables v0.8.0
@@ -26,7 +26,7 @@ require (
 	github.com/vishvananda/netlink v1.3.1
 	golang.org/x/crypto v0.43.0
 	golang.org/x/sys v0.37.0
-	libvirt.org/go/libvirtxml v1.11008.0
+	libvirt.org/go/libvirtxml v1.11009.0
 	sigs.k8s.io/knftables v0.0.19
 )
 
@@ -95,8 +95,8 @@ require (
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
-	github.com/prometheus/common v0.67.1 // indirect
-	github.com/prometheus/procfs v0.17.0 // indirect
+	github.com/prometheus/common v0.67.2 // indirect
+	github.com/prometheus/procfs v0.19.2 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/sagikazarmark/locafero v0.12.0 // indirect
 	github.com/sergi/go-diff v1.4.0 // indirect
