@@ -42,8 +42,8 @@ require (
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/felixge/fgprof v0.9.5 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
-	github.com/go-openapi/analysis v0.24.1 // indirect
-	github.com/go-openapi/errors v0.22.5 // indirect
+	github.com/go-openapi/analysis v0.24.2 // indirect
+	github.com/go-openapi/errors v0.22.6 // indirect
 	github.com/go-openapi/jsonpointer v0.22.4 // indirect
 	github.com/go-openapi/jsonreference v0.21.4 // indirect
 	github.com/go-openapi/swag/conv v0.25.4 // indirect
